@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 test('tokens expose usable presentation roles and motion controls', async () => {
@@ -25,6 +25,15 @@ test('asset provenance identifies official Korporate source', async () => {
 
   assert.match(provenance, /drive\.google\.com/);
   assert.match(provenance, /Manual de Marca - Korporate/i);
+});
+
+test('asset package keeps official signature and isolated symbol', async () => {
+  await access(new URL('../assets/korporate-signature-dark.png', import.meta.url));
+  await access(new URL('../assets/korporate-symbol-orange.png', import.meta.url));
+  const provenance = await readFile(new URL('../assets/README.md', import.meta.url), 'utf8');
+  assert.match(provenance, /Marca 1\.png/);
+  assert.match(provenance, /Marca 6\.png/);
+  assert.doesNotMatch(provenance, /korporate-logo\.jpg/);
 });
 
 test('component layer exposes reusable presentation primitives', async () => {
