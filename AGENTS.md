@@ -2,9 +2,10 @@
 
 ## Propósito
 
-Este repositório contém a skill `apresenta-ai` e páginas web interativas
-para palestras. Cada entrega deve ser exibível em navegador, em tela cheia,
-com narrativa sequencial semelhante a uma apresentação.
+Este repositório contém a skill `apresenta-ai` e suas referências. As páginas
+web geradas ficam no projeto onde a skill foi invocada. Cada entrega deve ser
+exibível em navegador, em tela cheia, com narrativa sequencial semelhante a
+uma apresentação.
 
 Não criar arquivos PowerPoint, Keynote ou equivalentes, salvo solicitação
 explícita.
@@ -19,11 +20,12 @@ explícita.
 
 - `SKILL.md`: instruções principais da skill.
 - `arquivos/designs/<instituicao>/`: identidades visuais e referências.
-- `output/<nome-da-apresentacao>/`: entrega completa de cada página web.
+- `.apresentaAI/<nome-da-apresentacao>/`: entrega completa de cada página web,
+  na raiz do projeto onde a skill foi invocada.
 - Skills auxiliares, quando justificadas, ficam em `skills/<nome-da-skill>/`.
 
-Não criar conteúdo de entrega fora de `output/`, salvo materiais reutilizáveis
-em `arquivos/`.
+Não criar conteúdo de entrega fora de `.apresentaAI/` no projeto invocador,
+salvo materiais reutilizáveis em `arquivos/` deste repositório.
 
 ## Identidade visual
 

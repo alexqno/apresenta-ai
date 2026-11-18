@@ -15,7 +15,8 @@ roteiro, artigo-base ou conteúdo sequencial. O acionamento é manual no chat.
   artigo-base ou texto completo pode complementar contexto e ser convertido em
   roteiro antes da implementação.
 - Design pattern escolhido e disponível em `arquivos/designs/<instituicao>/`.
-- Título da apresentação, que nomeia sua pasta em `output/`.
+- Título da apresentação, que nomeia sua pasta em
+  `.apresentaAI/` na raiz do projeto onde a skill foi invocada.
 - Orientações por projeto para imagens, gráficos ou recursos interativos, se
   existirem.
 - Tom e público, quando eles alterarem a experiência. Não presuma que o tom de
@@ -69,7 +70,8 @@ elementos que funcionam melhor como HTML, CSS, SVG ou gráfico de dados.
    contexto quando isso melhorar a narrativa.
 3. Planeje ritmo, hierarquia, imagens, gráficos e interações que reforcem a
    narrativa.
-4. Crie `output/<titulo-da-apresentacao>/` como projeto web autocontido.
+4. Crie `.apresentaAI/<titulo-da-apresentacao>/` na raiz do projeto onde a
+   skill foi invocada, como projeto web autocontido.
 5. Implemente HTML, CSS e JavaScript na menor complexidade que entregue a
    experiência pedida.
 6. Inclua navegação por teclado: próxima, anterior, início e fim. Ofereça
