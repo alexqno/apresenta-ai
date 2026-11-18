@@ -7,6 +7,7 @@ Sistema de design para apresentações web 16:9 da Korporate. Combina contraste 
 1. Inclua `tokens.css` antes de `components.css`.
 2. Use `gallery.html` como catálogo de padrões, não como apresentação final.
 3. Copie apenas os componentes necessários para uma nova apresentação e mantenha os papéis semânticos de cor.
+4. Consulte `design-rationale.md` antes de criar variações de capa, dados ou fluxo.
 
 ## Princípios
 
