@@ -1,0 +1,20 @@
+.presentation-kicker {
+  color: var(--presentation-color-accent);
+  font: 700 0.9rem/1 var(--presentation-font-body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.presentation-title {
+  color: var(--presentation-color-text);
+  font-family: var(--presentation-font-display);
+  font-size: clamp(2.5rem, 6vw, 7rem);
+  line-height: 0.95;
+}
+
+.presentation-card {
+  background: var(--presentation-color-surface);
+  border-radius: var(--presentation-radius);
+  color: var(--presentation-color-text);
+  padding: var(--presentation-space-3);
+}

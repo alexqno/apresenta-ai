@@ -18,24 +18,27 @@ explícita.
 
 ## Estrutura
 
-- `SKILL.md`: instruções principais da skill.
-- `arquivos/designs/<instituicao>/`: identidades visuais e referências.
+- `apresenta-ai/SKILL.md`: instruções principais da skill instalável.
+- `apresenta-design/SKILL.md`: skill instalável para criação assistida de designs.
+- `.apresentaAI/designs/<instituicao>/`: identidade visual definida no projeto
+  que invocou as skills.
 - `.apresentaAI/<nome-da-apresentacao>/`: entrega completa de cada página web,
   na raiz do projeto onde a skill foi invocada.
 - Skills auxiliares, quando justificadas, ficam em `skills/<nome-da-skill>/`.
 
 Não criar conteúdo de entrega fora de `.apresentaAI/` no projeto invocador,
-salvo materiais reutilizáveis em `arquivos/` deste repositório.
+salvo templates neutros incluídos nas skills deste repositório.
 
 ## Identidade visual
 
-- Cada instituição possui design em `arquivos/designs/<instituicao>/`.
-- Primeiro design disponível: `korporate`.
+- Cada instituição possui design em
+  `.apresentaAI/designs/<instituicao>/` no projeto invocador.
 - Marca, cores, fontes e referências são guias; não são limites criativos.
 - Preserve proporções, contraste, legibilidade e uso correto de marcas.
 - Não invente logotipos, fontes proprietárias ou diretrizes institucionais.
 - Se o design pattern não for informado, pergunte qual usar antes de criar
-  qualquer artefato visual.
+  qualquer artefato visual. Se não existir design adequado, use a skill
+  `apresenta-design` ou peça que o usuário forneça um.
 
 ## Entregas
 

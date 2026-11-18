@@ -1,0 +1,4 @@
+interface:
+  display_name: "Apresenta Design"
+  short_description: "Cria designs para apresentações"
+  default_prompt: "Use $apresenta-design para criar um design local de apresentações para esta instituição."

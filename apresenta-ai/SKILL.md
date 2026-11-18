@@ -1,3 +1,10 @@
+---
+name: apresenta-ai
+description: Crie ou evolua apresentações web interativas, sequenciais e em tela cheia a partir de roteiro ou conteúdo-base. Use para palestras, talks e apresentações; não use para arquivos PowerPoint, Keynote ou slides tradicionais.
+metadata:
+  short-description: Cria apresentações web narrativas
+---
+
 # Pra que serve
 
 Criar páginas web interativas para palestras, em narrativa sequencial e
@@ -14,7 +21,8 @@ roteiro, artigo-base ou conteúdo sequencial. O acionamento é manual no chat.
 - Roteiro sequencial, com expectativa de telas e pontos centrais. Um
   artigo-base ou texto completo pode complementar contexto e ser convertido em
   roteiro antes da implementação.
-- Design pattern escolhido e disponível em `arquivos/designs/<instituicao>/`.
+- Design pattern escolhido e disponível em
+  `.apresentaAI/designs/<instituicao>/` no projeto invocador.
 - Título da apresentação, que nomeia sua pasta em
   `.apresentaAI/` na raiz do projeto onde a skill foi invocada.
 - Orientações por projeto para imagens, gráficos ou recursos interativos, se
@@ -41,11 +49,12 @@ a informar.
 # Escolha de design pattern
 
 Se o pedido não informar o design pattern, pergunte qual usar antes de criar
-qualquer artefato visual. Não escolha `korporate` automaticamente apenas por
-ser o primeiro design disponível.
+qualquer artefato visual. Não escolha automaticamente o primeiro design
+disponível.
 
 Se o design necessário não existir, interrompa a criação da apresentação e
-trate primeiro da criação ou inclusão desse design.
+oriente o usuário a criar ou incluir o design. Quando a skill estiver
+instalada, use `$apresenta-design` para criar um design local assistido.
 
 # Uso de identidades visuais
 
@@ -128,6 +137,9 @@ observadas em entregas reais e a contramedida específica; não transforme uma
 preferência isolada em regra geral.
 
 # Skills auxiliares
+
+`$apresenta-design` é uma skill independente para entrevistar, criar e evoluir
+designs locais antes da apresentação. Não a use para criar uma tela ou roteiro.
 
 Crie uma skill auxiliar somente para capacidade independente, reutilizável e
 não presente em toda apresentação. Exemplos: páginas secundárias sincronizadas

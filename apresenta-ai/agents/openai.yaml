@@ -1,0 +1,4 @@
+interface:
+  display_name: "Apresenta AI"
+  short_description: "Cria apresentações web narrativas"
+  default_prompt: "Use $apresenta-ai para criar uma apresentação web a partir deste roteiro."
