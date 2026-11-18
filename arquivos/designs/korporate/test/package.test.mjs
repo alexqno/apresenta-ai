@@ -28,12 +28,20 @@ test('asset provenance identifies official Korporate source', async () => {
 });
 
 test('asset package keeps official signature and isolated symbol', async () => {
-  await access(new URL('../assets/korporate-signature-dark.png', import.meta.url));
-  await access(new URL('../assets/korporate-symbol-orange.png', import.meta.url));
+  for (const asset of [
+    'korporate-fundo-branco.svg',
+    'korporate-fundo-escuro.svg',
+    'korporate-fundo-laranja.svg',
+    'korporate-simbolo-fundo-claro.svg',
+    'korporate-simbolo-fundo-escuro.svg',
+  ]) {
+    await access(new URL(`../assets/${asset}`, import.meta.url));
+  }
   const provenance = await readFile(new URL('../assets/README.md', import.meta.url), 'utf8');
-  assert.match(provenance, /Marca 1\.png/);
-  assert.match(provenance, /Marca 6\.png/);
-  assert.doesNotMatch(provenance, /korporate-logo\.jpg/);
+  assert.match(provenance, /ativos canônicos/i);
+  assert.match(provenance, /fundo claro/i);
+  assert.match(provenance, /fundo escuro/i);
+  assert.doesNotMatch(provenance, /\.png/);
 });
 
 test('component layer exposes reusable presentation primitives', async () => {

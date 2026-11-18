@@ -15,7 +15,7 @@ Abra `gallery.html` em um navegador moderno. Não requer instalação ou servido
 
 Controles: `→` ou espaço avança; `←` volta; `Home` vai ao início; `End` vai ao fim; `F` alterna tela cheia. Os botões inferiores oferecem as mesmas ações. Controles editáveis não disparam navegação.
 
-Ativos: `assets/korporate-signature-dark.png` para fundo escuro e `assets/korporate-symbol-orange.png` para fundo claro. Consulte `assets/README.md` antes de usar.
+Ativos: use a assinatura SVG correspondente ao fundo e o símbolo SVG apenas como elemento secundário. Consulte `assets/README.md` antes de usar.
 
 ## Acessibilidade
 

@@ -1,13 +1,16 @@
 # Ativos Korporate
 
-## Marcas oficiais
+## Ativos canônicos
 
-- `korporate-signature-dark.png`: assinatura horizontal laranja/branca. Cópia de `Marca 1.png` no Drive. Use somente em fundo escuro.
-- `korporate-symbol-orange.png`: símbolo Korporate laranja isolado. Cópia de `Marca 6.png` no Drive. Use em fundo claro e com área livre generosa.
-- Fonte oficial: [Marca - PNG](https://drive.google.com/drive/folders/1qCSJV2pTpxz3LDK8kO1I0uL7Jfz7nBDs), [Manual de Marca - Korporate.pdf](https://drive.google.com/file/d/1eWMUsmnYu4gbChgbH3MTb2s8U7xm1vg4/view) e [Marca vetorial](https://drive.google.com/drive/folders/1YFyGjjVfxFayaKZ0rxubdm7NjhVVMVz_).
+- `korporate-fundo-branco.svg`: assinatura para fundo claro.
+- `korporate-fundo-escuro.svg`: assinatura para fundo escuro.
+- `korporate-fundo-laranja.svg`: assinatura para fundo laranja.
+- `korporate-simbolo-fundo-claro.svg`: símbolo laranja isolado, para fundo claro.
+- `korporate-simbolo-fundo-escuro.svg`: símbolo branco isolado, para fundo escuro.
+- Fonte: SVGs extraídos pelo usuário nesta tarefa; consultar também [Manual de Marca - Korporate.pdf](https://drive.google.com/file/d/1eWMUsmnYu4gbChgbH3MTb2s8U7xm1vg4/view) e [Marca vetorial](https://drive.google.com/drive/folders/1YFyGjjVfxFayaKZ0rxubdm7NjhVVMVz_).
 - Recuperado em: 2026-11-18.
 
-Não alterar proporção, cores ou elementos das marcas. Assinatura completa: abertura, encerramento e fundos escuros. Símbolo isolado: capítulos, marcadores e fundos claros. Nunca use os dois juntos no mesmo bloco.
+Não alterar proporção, cores ou elementos das marcas. Assinatura completa: abertura, encerramento e rodapé. Símbolo isolado: capítulos, marcadores e detalhes. Nunca use os dois juntos no mesmo bloco.
 
 ## Paleta
 
