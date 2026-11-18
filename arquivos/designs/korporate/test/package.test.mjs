@@ -60,3 +60,27 @@ test('rationale records safe visual use and accessibility', async () => {
     assert.match(rationale, new RegExp(heading, 'i'));
   }
 });
+
+test('gallery demonstrates every required presentation pattern', async () => {
+  const html = await readFile(new URL('../gallery.html', import.meta.url), 'utf8');
+
+  for (const pattern of [
+    'data-pattern="cover"',
+    'data-pattern="chapter"',
+    'data-pattern="content"',
+    'data-pattern="data"',
+    'data-pattern="ai-flow"',
+    'data-pattern="closing"',
+    'Sucesso',
+    'Atenção',
+    'name="viewport"',
+    'name="description"',
+  ]) {
+    assert.match(html, new RegExp(pattern));
+  }
+});
+
+test('gallery preserves understanding when motion is reduced', async () => {
+  const css = await readFile(new URL('../gallery.css', import.meta.url), 'utf8');
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
+});
