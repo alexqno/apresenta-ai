@@ -107,11 +107,18 @@ test('dark cover and closing give the textual signature presentation scale', asy
   assert.match(css, /\.kp-slide--dark \.brand-lockup \{[^}]*max-width:min\(32vw, 32rem\)/);
 });
 
-test('gallery has keyboard guidance but no visible navigation buttons', async () => {
+test('cover has keyboard guidance but gallery has no visible navigation buttons', async () => {
   const html = await readFile(new URL('../gallery.html', import.meta.url), 'utf8');
   const css = await readFile(new URL('../gallery.css', import.meta.url), 'utf8');
-  assert.match(html, /gallery-help/);
-  assert.match(html, /← → espaço · Home End · F/);
+  assert.match(html, /class="keyboard-guide"/);
+  assert.match(html, /Navegar/);
+  assert.match(html, /←/);
+  assert.match(html, /→/);
+  assert.match(html, /Home/);
+  assert.match(html, /End/);
+  assert.match(html, /Tela cheia/);
+  assert.match(html, /<kbd>F<\/kbd>/);
+  assert.doesNotMatch(html, /gallery-help/);
   assert.doesNotMatch(html, /data-control=/);
-  assert.match(css, /\.gallery-help \{[^}]*background:var\(--kp-ink\)/);
+  assert.match(css, /\.keyboard-guide/);
 });
