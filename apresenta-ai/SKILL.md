@@ -11,6 +11,14 @@ Criar páginas web interativas para palestras, em narrativa sequencial e
 apresentáveis em tela cheia. A entrega é uma apresentação web, não um arquivo
 de slides tradicional.
 
+# Atualização
+
+Esta skill e `$apresenta-design` devem permanecer na mesma versão. Em um
+ambiente já instalado, use
+`python3 ~/.codex/skills/apresenta-ai/scripts/update_skills.py --check` para
+verificar uma versão nova e acrescente `--yes` para instalar. Depois da troca,
+inicie uma nova conversa antes de invocar as skills.
+
 # Quando usar
 
 Use quando o pedido for criar ou evoluir uma apresentação web a partir de um

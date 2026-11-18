@@ -84,3 +84,15 @@ Antes de considerar entrega pronta, valide:
   independente.
 - Evite transformar preferências de uma apresentação em regra global sem
   confirmação.
+
+## Desenvolvimento e releases
+
+- Desenvolva e faça commits em `develop`.
+- Integre mudanças em `master` somente por pull request.
+- Use Conventional Commits: `fix` incrementa patch, `feat` incrementa minor e
+  mudanças incompatíveis incrementam major.
+- Release Please cria pull requests de release após merges em `master`; o merge
+  desse PR atualiza versão, changelog, tag e GitHub Release.
+- `apresenta-ai` e `apresenta-design` devem manter a mesma versão.
+- Não versione `.superpowers/` nem `docs/superpowers/`; são artefatos gerados
+  pelo Superpowers.
