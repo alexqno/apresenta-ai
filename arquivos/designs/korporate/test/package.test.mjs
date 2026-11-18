@@ -101,3 +101,8 @@ test('gallery preserves understanding when motion is reduced', async () => {
   const css = await readFile(new URL('../gallery.css', import.meta.url), 'utf8');
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 });
+
+test('dark cover and closing give the textual signature presentation scale', async () => {
+  const css = await readFile(new URL('../gallery.css', import.meta.url), 'utf8');
+  assert.match(css, /\.kp-slide--dark \.brand-lockup \{[^}]*max-width:min\(32vw, 32rem\)/);
+});
