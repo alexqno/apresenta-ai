@@ -106,3 +106,12 @@ test('dark cover and closing give the textual signature presentation scale', asy
   const css = await readFile(new URL('../gallery.css', import.meta.url), 'utf8');
   assert.match(css, /\.kp-slide--dark \.brand-lockup \{[^}]*max-width:min\(32vw, 32rem\)/);
 });
+
+test('gallery has keyboard guidance but no visible navigation buttons', async () => {
+  const html = await readFile(new URL('../gallery.html', import.meta.url), 'utf8');
+  const css = await readFile(new URL('../gallery.css', import.meta.url), 'utf8');
+  assert.match(html, /gallery-help/);
+  assert.match(html, /← → espaço · Home End · F/);
+  assert.doesNotMatch(html, /data-control=/);
+  assert.match(css, /\.gallery-help \{[^}]*background:var\(--kp-ink\)/);
+});

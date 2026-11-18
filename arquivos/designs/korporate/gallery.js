@@ -24,7 +24,7 @@ export function createGalleryController({ slides, counter, status, root = docume
       slide.hidden = !active;
       slide.setAttribute('aria-hidden', String(!active));
     });
-    counter.textContent = `${activeIndex + 1} / ${slides.length}`;
+    if (counter) counter.textContent = `${activeIndex + 1} / ${slides.length}`;
     status.textContent = `Padrão ${activeIndex + 1} de ${slides.length}`;
   };
   const move = (action) => {
@@ -47,9 +47,6 @@ if (typeof document !== 'undefined') {
     slides,
     counter: document.querySelector('#slide-counter'),
     status: document.querySelector('#gallery-status'),
-  });
-  document.querySelectorAll('[data-control]').forEach((button) => {
-    button.addEventListener('click', () => button.dataset.control === 'fullscreen' ? controller.fullscreen() : controller.move(button.dataset.control));
   });
   document.addEventListener('keydown', (event) => {
     const action = keyToAction(event);
