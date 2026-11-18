@@ -122,3 +122,9 @@ test('cover has keyboard guidance but gallery has no visible navigation buttons'
   assert.doesNotMatch(html, /data-control=/);
   assert.match(css, /\.keyboard-guide/);
 });
+
+test('lead copy keeps kicker clear of title descenders', async () => {
+  const css = await readFile(new URL('../gallery.css', import.meta.url), 'utf8');
+  assert.match(css, /\.lead \{[^}]*gap:var\(--kp-space-4\)/);
+  assert.match(css, /\.lead > \* \{[^}]*margin:0/);
+});
