@@ -1,4 +1,5 @@
 :root {
+  --presentation-title-tracking: 0.06em;
   --presentation-color-surface: #ffffff;
   --presentation-color-surface-strong: #172033;
   --presentation-color-text: #172033;
@@ -7,6 +8,8 @@
   --presentation-color-positive: #18794e;
   --presentation-color-attention: #a63c06;
   --presentation-color-danger: #bd1f31;
+  --presentation-card-accent: var(--presentation-color-accent);
+  --presentation-card-surface: #eef3ff;
   --presentation-font-display: system-ui, sans-serif;
   --presentation-font-body: system-ui, sans-serif;
   --presentation-space-1: 0.5rem;

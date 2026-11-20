@@ -9,12 +9,16 @@
   color: var(--presentation-color-text);
   font-family: var(--presentation-font-display);
   font-size: clamp(2.5rem, 6vw, 7rem);
+  letter-spacing: var(--presentation-title-tracking);
   line-height: 0.95;
 }
 
 .presentation-card {
-  background: var(--presentation-color-surface);
+  background: var(--presentation-card-surface);
+  border: 1px solid color-mix(in srgb, var(--presentation-card-accent) 18%, transparent);
+  border-top: 0.5rem solid var(--presentation-card-accent);
   border-radius: var(--presentation-radius);
+  box-shadow: 0 1.25rem 3rem rgb(23 32 51 / 12%);
   color: var(--presentation-color-text);
   padding: var(--presentation-space-3);
 }
