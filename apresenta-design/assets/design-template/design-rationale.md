@@ -13,6 +13,15 @@
 - Referências:
 - Evitar:
 
+## Direção de imagens
+
+- Papel narrativo:
+- Linguagem visual:
+- Paleta e luz:
+- Composição e área segura para texto:
+- Quando não usar imagem:
+- Temas a evitar:
+
 ## Decisões
 
 - Paleta e contraste:

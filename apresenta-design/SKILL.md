@@ -29,6 +29,10 @@ Antes de criar o design, descubra somente o que altera decisões visuais:
 5. contexto de exibição, acessibilidade e nível de contraste necessário;
 6. padrões que precisam existir, como capa, capítulo, dados, comparação e
    encerramento.
+7. estilo de imagens para apresentações: papel narrativo, linguagem visual
+   (ilustração, fotografia, interface, diagrama ou mistura), paleta e luz,
+   composição e área segura de texto, temas a evitar e quando imagem não deve
+   ser usada.
 
 Se faltar marca, tipografia ou referência, registre a limitação e proponha
 alternativas genéricas. Não invente logotipo, fonte proprietária ou diretriz
@@ -40,7 +44,9 @@ institucional.
 2. Se existir, inspecione-o e confirme antes de sobrescrever arquivos.
 3. Copie `assets/design-template/` para
    `.apresentaAI/designs/<instituicao>/` no projeto invocador.
-4. Adapte tokens, componentes, ativos e racional ao que foi confirmado.
+4. Adapte tokens, componentes, ativos e racional ao que foi confirmado. O
+   racional inclui a seção `Direção de imagens`, com escolhas e limites que
+   `$apresenta-ai` poderá aplicar sem nova entrevista.
 5. Crie uma galeria ou exemplos de padrões apenas se ajudarem a validar o
    design; ela não substitui uma apresentação real.
 6. Registre fontes dos ativos e licença ou autorização aplicável.
@@ -63,4 +69,7 @@ institucional.
 - Componentes cobrem os padrões confirmados sem impor conteúdo de apresentação.
 - Ativos têm origem e uso documentados.
 - Racional registra decisões, limites e regras de contraste.
+- Racional contém `Direção de imagens`: papel, linguagem visual, composição,
+  paleta, área segura para texto e exclusões. Se não houver imagem gerada,
+  registre essa decisão explicitamente.
 - Design foi revisado em composição 16:9 e mantém leitura à distância.

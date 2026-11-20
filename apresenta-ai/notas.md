@@ -1,0 +1,12 @@
+# Notas
+
+- 2026-11-19 — A entrega ignorou componentes da galeria e não transformou conteúdo em composições visuais; adicionei direção visual obrigatória por tela, seleção semântica de recurso e revisão comparativa com contador e guia de teclado.
+- 2026-11-19 — Controles e rodapé quebraram responsividade, gráficos suprimiram conteúdo e um personagem foi substituído por CSS; proibi botões visíveis por padrão, exigi validação responsiva e preservação de conteúdo, e determinei geração de raster quando o roteiro pedir personagem.
+- 2026-11-19 — A skill deixava decisões de cards, imagens e composição genéricas; defini escolha proativa por semântica, grids por quantidade, fluxo completo, mockups fiéis, imagens geradas e fundos com fade, sem suprimir conteúdo do roteiro.
+- 2026-11-19 — Adicionei Matriz por tela e revisão de cobertura para impedir cruzamento, supressão e duplicação de conteúdo entre telas.
+- 2026-11-19 — A validação limpa deixou componentes escaparem e recriou cards fora do padrão Korporate; exigi trilhas defensivas, prova de geometria em todas as telas e uso uniforme do contrato visual de cards.
+- 2026-11-19 — A prova de geometria confirmou estouro em seis telas publicadas; defini razão 16:9 mensurável, orçamento vertical, calibração por arquétipo e falha objetiva por scroll ou caixa fora da área segura.
+- 2026-11-20 — A geração limpa recriou cards sem o contrato Korporate, dispensou recursos visuais planejáveis e concentrou conteúdo no topo. A skill agora exige Plano visual por tela, uso literal de componentes, decisão registrada de imagem e distribuição vertical; o template recebe token de tracking para títulos.
+- 2026-11-20 — A validação v4 copiou os componentes, mas misturou cards sem moldura com cards destacados e marcou imagens como `nenhuma` em bloco. O card-padrão agora exige cor interna, sombra e borda superior de 0.5rem; imagens seguem opcionais, mas precisam de avaliação registrada por tela.
+- 2026-11-20 — A direção de imagens era decidida na geração, sem referência visual persistente do design. `$apresenta-design` agora entrevista e registra Direção de imagens no racional; `$apresenta-ai` a lê antes de propor recursos visuais.
+- 2026-11-20 — A validação limpa descartou toda a direção de imagens quando fluxos e cards já explicavam o conteúdo. Telas de categorias mapeadas pelo design agora usam o recurso visual previsto ou registram incompatibilidade concreta; fluxo e cards não autorizam descartá-lo.
