@@ -69,6 +69,21 @@ class SessionStoreTests(unittest.TestCase):
         self.assertIn("events.addEventListener('session-ended'", client)
         self.assertIn("event: session-ended", server)
 
+    def test_event_stream_waits_for_updates_without_reconnecting(self):
+        server = (Path(__file__).parents[1] / "scripts" / "serve_participation.py").read_text()
+
+        self.assertIn("def stream_events(self, session_id: str, last_event_id: str | None)", server)
+        self.assertIn("while True:", server)
+        self.assertIn("if session[\"updatedAt\"] == last_event_id:", server)
+
+    def test_current_mobile_card_animates_focus_and_spacing(self):
+        styles = (Path(__file__).parents[1] / "assets" / "participar" / "styles.css").read_text()
+
+        self.assertRegex(styles, r"\.slide-card\s*\{[^}]*transition:transform")
+        self.assertRegex(styles, r"\.slide-card\s*\{[^}]*margin")
+        self.assertRegex(styles, r"\.slide-card\.is-current\s*\{[^}]*transform:scale\(")
+        self.assertRegex(styles, r"\.slide-card\.is-current\s*\{[^}]*margin-block:")
+
 
 if __name__ == "__main__":
     unittest.main()
