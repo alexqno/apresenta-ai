@@ -233,6 +233,7 @@ class SessionStoreTests(unittest.TestCase):
         gallery = (Path(__file__).parents[1] / "assets" / "galeria-interacoes" / "index.html").read_text()
 
         self.assertIn("preenchimento da esquerda para a direita", skill)
+        self.assertIn("esvaziamento da direita para a esquerda", skill)
         self.assertIn("prefers-reduced-motion", skill)
         self.assertIn("interaction-stage-fill", gallery)
         self.assertIn('poll-row is-leading is-updated', gallery)
