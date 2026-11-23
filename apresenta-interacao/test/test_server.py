@@ -133,6 +133,50 @@ class SessionStoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.store.vote(session["sessionId"], "browser-a", "not-an-option")
 
+    def test_custom_poll_exposes_only_aggregated_totals(self):
+        polls = {
+            "delivery-readiness": {
+                "slideIndex": 4,
+                "options": ["ready", "blocked", "uncertain"],
+            }
+        }
+        session = self.store.create("pausa", polls=polls)
+        self.store.update_slide(session["sessionId"], session["presenterToken"], 4)
+
+        updated = self.store.vote(session["sessionId"], "browser-a", "delivery-readiness", "ready")
+        public = self.server.SessionStore.public(updated)
+
+        self.assertEqual(1, public["polls"]["delivery-readiness"]["totalVotes"])
+        self.assertEqual(1, public["polls"]["delivery-readiness"]["totals"]["ready"])
+        self.assertNotIn("browser-a", json.dumps(public))
+
+    def test_mobile_template_renders_poll_without_group_totals(self):
+        root = Path(__file__).parents[1] / "assets" / "participar"
+        client = (root / "app.js").read_text()
+        styles = (root / "styles.css").read_text()
+
+        self.assertIn("renderPoll", client)
+        self.assertIn("data-poll-id", client)
+        self.assertNotIn("poll-total", client)
+        self.assertIn(".poll-option.is-selected", styles)
+
+    def test_poll_gallery_shows_stage_and_mobile_states(self):
+        gallery = Path(__file__).parents[1] / "assets" / "galeria-interacoes" / "index.html"
+
+        self.assertTrue(gallery.is_file())
+        content = gallery.read_text()
+        self.assertIn("Resultado no palco", content)
+        self.assertIn("Escolha no celular", content)
+        self.assertIn("is-leading", content)
+        self.assertIn("is-selected", content)
+
+    def test_skill_documents_reusable_poll_contract(self):
+        skill = (Path(__file__).parents[1] / "SKILL.md").read_text()
+
+        self.assertIn("references/votacao.md", skill)
+        self.assertIn("galeria-interacoes", skill)
+        self.assertIn("100%", skill)
+
 
 if __name__ == "__main__":
     unittest.main()

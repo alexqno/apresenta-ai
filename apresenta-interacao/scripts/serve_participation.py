@@ -18,8 +18,13 @@ from uuid import uuid4
 
 
 SESSION_ID_PATTERN = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", re.I)
-IA_USAGE_OPTIONS = ("explore", "research", "draft", "agent", "automate")
-IA_USAGE_SLIDE_INDEX = 2
+DEFAULT_POLLS = {
+    "ia-usage": {
+        "slideIndex": 2,
+        "options": ("explore", "research", "draft", "agent", "automate"),
+    }
+}
+POLL_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 
 
 class Forbidden(RuntimeError):
@@ -41,6 +46,30 @@ def validate_public_url(value: str) -> str:
     if (parsed.hostname or "").lower() in {"localhost", "127.0.0.1", "::1"}:
         raise ValueError("--public-url não pode usar localhost.")
     return value.rstrip("/")
+
+
+def normalize_polls(value: object | None) -> dict[str, dict]:
+    source = DEFAULT_POLLS if value is None else value
+    if not isinstance(source, dict):
+        raise ValueError("polls deve ser um objeto indexado por id.")
+    normalized: dict[str, dict] = {}
+    for poll_id, definition in source.items():
+        if not isinstance(poll_id, str) or not POLL_ID_PATTERN.fullmatch(poll_id):
+            raise ValueError("id de enquete inválido.")
+        if not isinstance(definition, dict):
+            raise ValueError("definição de enquete inválida.")
+        slide_index = definition.get("slideIndex")
+        options = definition.get("options")
+        if not isinstance(slide_index, int) or slide_index < 0:
+            raise ValueError("slideIndex de enquete inválido.")
+        if not isinstance(options, (list, tuple)) or len(options) < 2:
+            raise ValueError("enquete exige pelo menos duas opções.")
+        if not all(isinstance(option, str) and POLL_ID_PATTERN.fullmatch(option) for option in options):
+            raise ValueError("opções de enquete inválidas.")
+        if len(set(options)) != len(options):
+            raise ValueError("opções de enquete repetidas.")
+        normalized[poll_id] = {"slideIndex": slide_index, "options": tuple(options)}
+    return normalized
 
 
 def safe_path(root: Path, request_path: str) -> Path | None:
@@ -104,8 +133,9 @@ class SessionStore:
         self.lock = RLock()
         self.changed = Condition(self.lock)
 
-    def create(self, deck: str) -> dict:
+    def create(self, deck: str, polls: object | None = None) -> dict:
         now = datetime.now(timezone.utc)
+        definitions = normalize_polls(polls)
         session = {
             "sessionId": str(uuid4()),
             "presenterToken": secrets.token_urlsafe(32),
@@ -113,7 +143,8 @@ class SessionStore:
             "slideIndex": 0,
             "updatedAt": now.isoformat(),
             "expiresAt": (now + timedelta(seconds=self.ttl_seconds)).isoformat(),
-            "votes": {"ia-usage": {}},
+            "pollDefinitions": definitions,
+            "votes": {poll_id: {} for poll_id in definitions},
         }
         session["participationUrl"] = f"{self.public_url}/{deck}/participar/{session['sessionId']}"
         with self.lock:
@@ -142,16 +173,22 @@ class SessionStore:
             self.changed.notify_all()
             return updated
 
-    def vote(self, session_id: str, participant_id: str, option: str) -> dict:
+    def vote(self, session_id: str, participant_id: str, poll_id: str, option: str | None = None) -> dict:
+        if option is None:
+            option = poll_id
+            poll_id = "ia-usage"
         if not isinstance(participant_id, str) or not participant_id:
             raise ValueError("participantId inválido.")
-        if option not in IA_USAGE_OPTIONS:
-            raise ValueError("Opção de voto inválida.")
         session = self.get(session_id)
-        if session["slideIndex"] != IA_USAGE_SLIDE_INDEX:
-            raise Conflict("A votação está disponível apenas na tela 3.")
+        definition = session["pollDefinitions"].get(poll_id)
+        if not definition:
+            raise ValueError("Enquete inválida.")
+        if option not in definition["options"]:
+            raise ValueError("Opção de voto inválida.")
+        if session["slideIndex"] != definition["slideIndex"]:
+            raise Conflict("A votação está disponível apenas na tela da enquete.")
         with self.lock:
-            self.sessions[session_id]["votes"]["ia-usage"][participant_id] = option
+            self.sessions[session_id]["votes"][poll_id][participant_id] = option
             self.sessions[session_id]["updatedAt"] = datetime.now(timezone.utc).isoformat()
             updated = self.sessions[session_id].copy()
             self.changed.notify_all()
@@ -166,10 +203,12 @@ class SessionStore:
 
     @staticmethod
     def public(session: dict) -> dict:
-        votes = session.get("votes", {}).get("ia-usage", {})
-        totals = {option: sum(value == option for value in votes.values()) for option in IA_USAGE_OPTIONS}
-        public = {key: value for key, value in session.items() if key not in {"presenterToken", "votes"}}
-        public["polls"] = {"ia-usage": {"totals": totals, "totalVotes": sum(totals.values())}}
+        public = {key: value for key, value in session.items() if key not in {"presenterToken", "pollDefinitions", "votes"}}
+        public["polls"] = {}
+        for poll_id, definition in session.get("pollDefinitions", {}).items():
+            votes = session.get("votes", {}).get(poll_id, {})
+            totals = {option: sum(value == option for value in votes.values()) for option in definition["options"]}
+            public["polls"][poll_id] = {"totals": totals, "totalVotes": sum(totals.values())}
         return public
 
 
@@ -273,14 +312,14 @@ class ParticipationHandler(SimpleHTTPRequestHandler):
                 deck = body.get("deck")
                 if not isinstance(deck, str) or not deck:
                     raise ValueError("deck é obrigatório.")
-                self.respond_json(201, self.store.create(deck))
+                self.respond_json(201, self.store.create(deck, body.get("polls")))
                 return
             if len(parts) == 5 and parts[1:3] == ["api", "sessions"] and parts[4] == "slide":
                 session = self.store.update_slide(parts[3], body.get("presenterToken", ""), body.get("slideIndex"))
                 self.respond_json(200, SessionStore.public(session))
                 return
-            if len(parts) == 6 and parts[1:3] == ["api", "sessions"] and parts[4:] == ["votes", "ia-usage"]:
-                session = self.store.vote(parts[3], body.get("participantId", ""), body.get("option"))
+            if len(parts) == 6 and parts[1:3] == ["api", "sessions"] and parts[4] == "votes":
+                session = self.store.vote(parts[3], body.get("participantId", ""), parts[5], body.get("option"))
                 self.respond_json(200, SessionStore.public(session))
                 return
             self.respond_json(404, {"error": "Rota não encontrada."})

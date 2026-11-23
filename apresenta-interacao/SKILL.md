@@ -36,6 +36,30 @@ Para acompanhamento por celular na mesma rede:
 6. Abra links externos em nova aba quando disponível e aceite somente URLs
    autorizadas pelo projeto.
 
+# Votação ao vivo
+
+Quando o pedido incluir votação, leia [o contrato de votação](references/votacao.md)
+antes de implementar. Não transforme toda tela de pergunta em enquete: confirme
+opções, uma escolha por participante, momento de abertura e visibilidade dos
+resultados.
+
+- Defina a enquete em `participacao.json`, dentro da tela: `id`, `question` e
+  opções `{ id, label }`. O `id` deve ser estável, curto e único.
+- Na criação da sessão, envie ao servidor cada enquete com `id`, `slideIndex`
+  e IDs de opção. O servidor aceita voto somente na tela ativa, substitui o
+  voto anterior do mesmo navegador e expõe apenas totais agregados.
+- No palco, mostre total geral à direita. Use percentuais inteiros que somem
+  100% por maiores restos; barras dos líderes ficam completas com gradiente de
+  destaque e as demais são proporcionais ao líder, com contraste menor.
+  Empates recebem o mesmo destaque. Ajuste cores pelos tokens do design.
+- No celular, não mostre totais nem percentuais. Destaque somente a escolha
+  local com gradiente e mantenha as demais opções legíveis. Desabilite o voto
+  fora da tela ativa da enquete.
+- Copie `assets/galeria-interacoes/` para a entrega como
+  `galeria-interacoes/` quando a apresentação tiver votação. Adapte os tokens
+  ao design selecionado e use a galeria para validar os estados de palco e
+  celular antes de finalizar.
+
 # Limites
 
 - Página móvel não altera roteiro ou deck sem pedido explícito.
@@ -54,3 +78,6 @@ Para acompanhamento por celular na mesma rede:
 - Títulos, resumos e links vêm do manifesto revisável.
 - Layout móvel vertical usa identidade aprovada e não corta conteúdo.
 - Comando local, URL LAN e controles estão documentados.
+- Enquete mantém voto individual privado e resultados públicos agregados.
+- Galeria de interações mostra estados sem voto, voto selecionado, líder e
+  empate usando o design selecionado.
