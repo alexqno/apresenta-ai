@@ -128,6 +128,13 @@ class ParticipationHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def respond_session_ended(self, message: str) -> None:
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
+        self.wfile.write(f"event: session-ended\ndata: {json.dumps({'error': message})}\n\n".encode())
+
     def do_GET(self) -> None:
         parts = urlparse(self.path).path.split("/")
         if len(parts) == 5 and parts[1:3] == ["api", "sessions"] and parts[4] == "events":
@@ -140,7 +147,7 @@ class ParticipationHandler(SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(f"id: {session['updatedAt']}\nevent: slide\ndata: {payload}\n\n".encode())
             except NotFound as error:
-                self.respond_json(404, {"error": str(error)})
+                self.respond_session_ended(str(error))
             return
         if len(parts) == 4 and parts[1:3] == ["api", "sessions"]:
             try:

@@ -59,6 +59,16 @@ class SessionStoreTests(unittest.TestCase):
             self.assertEqual((target / "index.html").resolve(), self.server.participation_path(root, "/pausa/participar/00000000-0000-4000-8000-000000000000"))
             self.assertIsNone(self.server.participation_path(root, "/pausa/participar/app.js"))
 
+    def test_mobile_client_keeps_one_sse_subscription(self):
+        client = (Path(__file__).parents[1] / "assets" / "participar" / "app.js").read_text()
+        server = (Path(__file__).parents[1] / "scripts" / "serve_participation.py").read_text()
+
+        self.assertIn("function subscribeToSession()", client)
+        self.assertNotIn("events.onmessage = (event) => receive", client)
+        self.assertNotIn("events.addEventListener('slide', (event) => receive", client)
+        self.assertIn("events.addEventListener('session-ended'", client)
+        self.assertIn("event: session-ended", server)
+
 
 if __name__ == "__main__":
     unittest.main()
