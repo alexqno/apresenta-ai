@@ -52,10 +52,10 @@ resultados.
   100% por maiores restos; barras dos líderes ficam completas com gradiente de
   destaque e as demais são proporcionais ao líder, com contraste menor.
   Empates recebem o mesmo destaque. Ajuste cores pelos tokens do design.
-- Cada aumento de contagem no palco pode acionar uma única animação de
-  preenchimento da esquerda para a direita. Quando uma opção perde voto,
-  use esvaziamento da direita para a esquerda antes de estabilizar na nova
-  proporção. Não anime em loop e respeite `prefers-reduced-motion`.
+- Cada atualização deve transitar da largura atual para o novo percentual,
+  seja aumento ou redução. Não use `clip-path`, preenchimento até zero ou
+  reinício visual: a barra deve sempre conservar seu estado visível e alcançar
+  a nova proporção. Não anime em loop e respeite `prefers-reduced-motion`.
 - No celular, não mostre totais nem percentuais. Destaque somente a escolha
   local com gradiente e mantenha as demais opções legíveis. Desabilite o voto
   fora da tela ativa da enquete.
