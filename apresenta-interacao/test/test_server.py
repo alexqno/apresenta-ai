@@ -23,6 +23,8 @@ class SessionStoreTests(unittest.TestCase):
     def test_only_presenter_token_updates_current_slide(self):
         session = self.store.create("pausa")
 
+        self.assertEqual("http://192.168.1.20:8080/pausa/participar/" + session["sessionId"], session["participationUrl"])
+
         with self.assertRaises(self.server.Forbidden):
             self.store.update_slide(session["sessionId"], "wrong", 3)
 

@@ -68,6 +68,7 @@ class SessionStore:
             "updatedAt": now.isoformat(),
             "expiresAt": (now + timedelta(seconds=self.ttl_seconds)).isoformat(),
         }
+        session["participationUrl"] = f"{self.public_url}/{deck}/participar/{session['sessionId']}"
         with self.lock:
             self.sessions[session["sessionId"]] = session
             self.changed.notify_all()
