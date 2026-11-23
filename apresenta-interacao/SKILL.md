@@ -52,6 +52,9 @@ resultados.
   100% por maiores restos; barras dos líderes ficam completas com gradiente de
   destaque e as demais são proporcionais ao líder, com contraste menor.
   Empates recebem o mesmo destaque. Ajuste cores pelos tokens do design.
+- Cada mudança de contagem no palco pode acionar uma única animação de
+  preenchimento da esquerda para a direita. Não anime em loop e respeite
+  `prefers-reduced-motion`.
 - No celular, não mostre totais nem percentuais. Destaque somente a escolha
   local com gradiente e mantenha as demais opções legíveis. Desabilite o voto
   fora da tela ativa da enquete.
@@ -76,7 +79,9 @@ antes de implementar. Use este modelo em vez de uma votação de escolha única.
   totais. Desabilite novos itens ao atingir o limite, mas sempre permita
   desfazer uma seleção.
 - No palco, mostre densidade ou contagem antes do limiar e destaque itens que
-  o alcançarem. Não inclua ilustrações específicas da apresentação no modelo.
+  o alcançarem. Ao cruzar o limiar, o gradiente pode entrar uma vez da esquerda
+  para a direita; atualizações posteriores não o reiniciam. Não inclua
+  ilustrações específicas da apresentação no modelo.
 - Copie `assets/galeria-interacoes/` para a entrega quando houver diagnóstico
   ponderado. A galeria deve mostrar estado neutro, seleção local e item acima
   do limiar, com tokens do design selecionado.

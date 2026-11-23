@@ -228,6 +228,16 @@ class SessionStoreTests(unittest.TestCase):
         self.assertIn("galeria-interacoes", skill)
         self.assertIn("100%", skill)
 
+    def test_skill_documents_one_shot_stage_fill_motion(self):
+        skill = (Path(__file__).parents[1] / "SKILL.md").read_text()
+        gallery = (Path(__file__).parents[1] / "assets" / "galeria-interacoes" / "index.html").read_text()
+
+        self.assertIn("preenchimento da esquerda para a direita", skill)
+        self.assertIn("prefers-reduced-motion", skill)
+        self.assertIn("interaction-stage-fill", gallery)
+        self.assertIn('poll-row is-leading is-updated', gallery)
+        self.assertIn('diagnostic-row is-lit is-updated', gallery)
+
 
 if __name__ == "__main__":
     unittest.main()
