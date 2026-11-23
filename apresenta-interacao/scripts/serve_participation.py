@@ -72,6 +72,29 @@ def normalize_polls(value: object | None) -> dict[str, dict]:
     return normalized
 
 
+def normalize_diagnostics(value: object | None) -> dict[str, dict]:
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError("diagnostics deve ser um objeto indexado por id.")
+    normalized: dict[str, dict] = {}
+    for diagnostic_id, definition in value.items():
+        if not isinstance(diagnostic_id, str) or not POLL_ID_PATTERN.fullmatch(diagnostic_id):
+            raise ValueError("id de diagnóstico inválido.")
+        if not isinstance(definition, dict):
+            raise ValueError("definição de diagnóstico inválida.")
+        slide_index, items = definition.get("slideIndex"), definition.get("items")
+        if not isinstance(slide_index, int) or slide_index < 0:
+            raise ValueError("slideIndex de diagnóstico inválido.")
+        if not isinstance(items, (list, tuple)) or not items or not all(isinstance(item, str) and POLL_ID_PATTERN.fullmatch(item) for item in items) or len(set(items)) != len(items):
+            raise ValueError("itens de diagnóstico inválidos.")
+        max_selections = definition.get("maxSelections", len(items))
+        if not isinstance(max_selections, int) or not 1 <= max_selections <= len(items):
+            raise ValueError("limite de seleção inválido.")
+        normalized[diagnostic_id] = {"slideIndex": slide_index, "items": tuple(items), "maxSelections": max_selections}
+    return normalized
+
+
 def safe_path(root: Path, request_path: str) -> Path | None:
     relative = unquote(request_path).lstrip("/") or "index.html"
     target = (root / relative).resolve()
@@ -133,9 +156,10 @@ class SessionStore:
         self.lock = RLock()
         self.changed = Condition(self.lock)
 
-    def create(self, deck: str, polls: object | None = None) -> dict:
+    def create(self, deck: str, polls: object | None = None, diagnostics: object | None = None) -> dict:
         now = datetime.now(timezone.utc)
         definitions = normalize_polls(polls)
+        diagnostic_definitions = normalize_diagnostics(diagnostics)
         session = {
             "sessionId": str(uuid4()),
             "presenterToken": secrets.token_urlsafe(32),
@@ -145,6 +169,8 @@ class SessionStore:
             "expiresAt": (now + timedelta(seconds=self.ttl_seconds)).isoformat(),
             "pollDefinitions": definitions,
             "votes": {poll_id: {} for poll_id in definitions},
+            "diagnosticDefinitions": diagnostic_definitions,
+            "diagnostics": {diagnostic_id: {} for diagnostic_id in diagnostic_definitions},
         }
         session["participationUrl"] = f"{self.public_url}/{deck}/participar/{session['sessionId']}"
         with self.lock:
@@ -168,6 +194,26 @@ class SessionStore:
             raise ValueError("slideIndex inválido.")
         with self.lock:
             self.sessions[session_id]["slideIndex"] = slide_index
+            self.sessions[session_id]["updatedAt"] = datetime.now(timezone.utc).isoformat()
+            updated = self.sessions[session_id].copy()
+            self.changed.notify_all()
+            return updated
+
+    def diagnose(self, session_id: str, participant_id: str, diagnostic_id: str, items: object) -> dict:
+        if not isinstance(participant_id, str) or not participant_id:
+            raise ValueError("participantId inválido.")
+        if not isinstance(items, list) or not all(isinstance(item, str) for item in items):
+            raise ValueError("itens inválidos.")
+        session = self.get(session_id)
+        definition = session["diagnosticDefinitions"].get(diagnostic_id)
+        if not definition:
+            raise ValueError("Diagnóstico inválido.")
+        if session["slideIndex"] != definition["slideIndex"]:
+            raise Conflict("O diagnóstico está disponível apenas na tela ativa.")
+        if len(items) > definition["maxSelections"] or len(set(items)) != len(items) or any(item not in definition["items"] for item in items):
+            raise ValueError("Item de diagnóstico inválido.")
+        with self.lock:
+            self.sessions[session_id]["diagnostics"][diagnostic_id][participant_id] = items
             self.sessions[session_id]["updatedAt"] = datetime.now(timezone.utc).isoformat()
             updated = self.sessions[session_id].copy()
             self.changed.notify_all()
@@ -203,12 +249,17 @@ class SessionStore:
 
     @staticmethod
     def public(session: dict) -> dict:
-        public = {key: value for key, value in session.items() if key not in {"presenterToken", "pollDefinitions", "votes"}}
+        public = {key: value for key, value in session.items() if key not in {"presenterToken", "pollDefinitions", "votes", "diagnosticDefinitions", "diagnostics"}}
         public["polls"] = {}
         for poll_id, definition in session.get("pollDefinitions", {}).items():
             votes = session.get("votes", {}).get(poll_id, {})
             totals = {option: sum(value == option for value in votes.values()) for option in definition["options"]}
             public["polls"][poll_id] = {"totals": totals, "totalVotes": sum(totals.values())}
+        public["diagnostics"] = {}
+        for diagnostic_id, definition in session.get("diagnosticDefinitions", {}).items():
+            responses = session.get("diagnostics", {}).get(diagnostic_id, {})
+            totals = {item: sum(item in response for response in responses.values()) for item in definition["items"]}
+            public["diagnostics"][diagnostic_id] = {"totals": totals, "totalResponses": sum(bool(response) for response in responses.values())}
         return public
 
 
@@ -312,7 +363,7 @@ class ParticipationHandler(SimpleHTTPRequestHandler):
                 deck = body.get("deck")
                 if not isinstance(deck, str) or not deck:
                     raise ValueError("deck é obrigatório.")
-                self.respond_json(201, self.store.create(deck, body.get("polls")))
+                self.respond_json(201, self.store.create(deck, body.get("polls"), body.get("diagnostics")))
                 return
             if len(parts) == 5 and parts[1:3] == ["api", "sessions"] and parts[4] == "slide":
                 session = self.store.update_slide(parts[3], body.get("presenterToken", ""), body.get("slideIndex"))
@@ -320,6 +371,10 @@ class ParticipationHandler(SimpleHTTPRequestHandler):
                 return
             if len(parts) == 6 and parts[1:3] == ["api", "sessions"] and parts[4] == "votes":
                 session = self.store.vote(parts[3], body.get("participantId", ""), parts[5], body.get("option"))
+                self.respond_json(200, SessionStore.public(session))
+                return
+            if len(parts) == 6 and parts[1:3] == ["api", "sessions"] and parts[4] == "diagnostics":
+                session = self.store.diagnose(parts[3], body.get("participantId", ""), parts[5], body.get("items"))
                 self.respond_json(200, SessionStore.public(session))
                 return
             self.respond_json(404, {"error": "Rota não encontrada."})

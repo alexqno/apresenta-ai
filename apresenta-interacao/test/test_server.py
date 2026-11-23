@@ -160,6 +160,54 @@ class SessionStoreTests(unittest.TestCase):
         self.assertNotIn("poll-total", client)
         self.assertIn(".poll-option.is-selected", styles)
 
+    def test_mobile_template_supports_weighted_multi_select_diagnostic(self):
+        root = Path(__file__).parents[1] / "assets" / "participar"
+        client = (root / "app.js").read_text()
+        styles = (root / "styles.css").read_text()
+
+        self.assertIn("renderDiagnostic", client)
+        self.assertIn("maxSelections", client)
+        self.assertIn("/diagnostics/", client)
+        self.assertIn(".diagnostic-option.is-selected", styles)
+
+    def test_skill_documents_weighted_diagnostic_option(self):
+        skill = (Path(__file__).parents[1] / "SKILL.md").read_text()
+
+        self.assertIn("references/diagnostico.md", skill)
+        self.assertIn("múltipla seleção", skill)
+        self.assertIn("limiar", skill)
+
+    def test_diagnostic_replaces_selection_and_keeps_identity_private(self):
+        diagnostics = {"task-xray": {"slideIndex": 6, "items": ["objective", "scope", "risk"]}}
+        session = self.store.create("pausa", diagnostics=diagnostics)
+        self.store.update_slide(session["sessionId"], session["presenterToken"], 6)
+
+        self.store.diagnose(session["sessionId"], "browser-a", "task-xray", ["objective", "risk"])
+        updated = self.store.diagnose(session["sessionId"], "browser-a", "task-xray", ["scope"])
+        public = self.server.SessionStore.public(updated)
+
+        self.assertEqual({"objective": 0, "scope": 1, "risk": 0}, public["diagnostics"]["task-xray"]["totals"])
+        self.assertEqual(1, public["diagnostics"]["task-xray"]["totalResponses"])
+        self.assertNotIn("browser-a", json.dumps(public))
+
+    def test_diagnostic_rejects_unknown_item_and_inactive_slide(self):
+        diagnostics = {"task-xray": {"slideIndex": 6, "items": ["objective", "scope"]}}
+        session = self.store.create("pausa", diagnostics=diagnostics)
+
+        with self.assertRaises(self.server.Conflict):
+            self.store.diagnose(session["sessionId"], "browser-a", "task-xray", ["objective"])
+        self.store.update_slide(session["sessionId"], session["presenterToken"], 6)
+        with self.assertRaises(ValueError):
+            self.store.diagnose(session["sessionId"], "browser-a", "task-xray", ["unknown"])
+
+    def test_diagnostic_rejects_more_than_configured_selection_limit(self):
+        diagnostics = {"task-xray": {"slideIndex": 6, "items": ["objective", "scope", "risk"], "maxSelections": 2}}
+        session = self.store.create("pausa", diagnostics=diagnostics)
+        self.store.update_slide(session["sessionId"], session["presenterToken"], 6)
+
+        with self.assertRaises(ValueError):
+            self.store.diagnose(session["sessionId"], "browser-a", "task-xray", ["objective", "scope", "risk"])
+
     def test_poll_gallery_shows_stage_and_mobile_states(self):
         gallery = Path(__file__).parents[1] / "assets" / "galeria-interacoes" / "index.html"
 
@@ -169,6 +217,9 @@ class SessionStoreTests(unittest.TestCase):
         self.assertIn("Escolha no celular", content)
         self.assertIn("is-leading", content)
         self.assertIn("is-selected", content)
+        self.assertIn("Diagnóstico ponderado", content)
+        self.assertIn("diagnostic-option", content)
+        self.assertIn("limiar", content)
 
     def test_skill_documents_reusable_poll_contract(self):
         skill = (Path(__file__).parents[1] / "SKILL.md").read_text()

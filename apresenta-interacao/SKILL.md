@@ -60,6 +60,27 @@ resultados.
   ao design selecionado e use a galeria para validar os estados de palco e
   celular antes de finalizar.
 
+# Diagnóstico ponderado
+
+Quando a pergunta pedir que cada pessoa identifique mais de uma lacuna,
+prioridade ou risco, leia [o contrato de diagnóstico](references/diagnostico.md)
+antes de implementar. Use este modelo em vez de uma votação de escolha única.
+
+- Defina `diagnostic` na tela de `participacao.json`: `id`, `question`, itens
+  `{ id, label }`, `maxSelections` e `highlightThreshold`. O limiar define
+  quantas seleções agregadas acendem cada item no palco.
+- Na criação da sessão, envie `id`, `slideIndex`, IDs dos itens e
+  `maxSelections`. Uma nova múltipla seleção substitui a anterior do mesmo
+  navegador. O servidor publica apenas totais agregados.
+- No celular, aplique gradiente apenas aos itens selecionados. Não mostre
+  totais. Desabilite novos itens ao atingir o limite, mas sempre permita
+  desfazer uma seleção.
+- No palco, mostre densidade ou contagem antes do limiar e destaque itens que
+  o alcançarem. Não inclua ilustrações específicas da apresentação no modelo.
+- Copie `assets/galeria-interacoes/` para a entrega quando houver diagnóstico
+  ponderado. A galeria deve mostrar estado neutro, seleção local e item acima
+  do limiar, com tokens do design selecionado.
+
 # Limites
 
 - Página móvel não altera roteiro ou deck sem pedido explícito.
@@ -81,3 +102,5 @@ resultados.
 - Enquete mantém voto individual privado e resultados públicos agregados.
 - Galeria de interações mostra estados sem voto, voto selecionado, líder e
   empate usando o design selecionado.
+- Diagnóstico ponderado limita múltipla seleção, preserva privacidade e
+  destaca itens somente quando atingem o limiar definido.
