@@ -2,6 +2,7 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+import time
 import unittest
 
 
@@ -83,6 +84,30 @@ class SessionStoreTests(unittest.TestCase):
         self.assertRegex(styles, r"\.slide-card\s*\{[^}]*margin")
         self.assertRegex(styles, r"\.slide-card\.is-current\s*\{[^}]*transform:scale\(")
         self.assertRegex(styles, r"\.slide-card\.is-current\s*\{[^}]*margin-block:")
+
+    def test_live_reload_revision_ignores_hidden_files_and_tracks_public_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            public = root / "index.html"
+            hidden = root / ".cache"
+            public.write_text("first")
+            initial = self.server.revision_for(root)
+
+            hidden.write_text("ignored")
+            self.assertEqual(initial, self.server.revision_for(root))
+
+            time.sleep(0.001)
+            public.write_text("second")
+            self.assertNotEqual(initial, self.server.revision_for(root))
+
+    def test_watch_client_polls_revision_and_reloads_only_after_a_change(self):
+        client = self.server.live_reload_script()
+        server = (Path(__file__).parents[1] / "scripts" / "serve_participation.py").read_text()
+
+        self.assertIn("/__apresenta/revision", client)
+        self.assertIn("location.reload()", client)
+        self.assertIn('parser.add_argument("--watch", action="store_true")', server)
+        self.assertIn("inject_live_reload", server)
 
 
 if __name__ == "__main__":

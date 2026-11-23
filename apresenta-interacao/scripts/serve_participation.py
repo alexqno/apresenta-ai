@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timedelta, timezone
+import hashlib
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -48,6 +49,45 @@ def participation_path(root: Path, request_path: str) -> Path | None:
         return None
     target = safe_path(root, f"/{parts[0]}/participar/index.html")
     return target if target and target.is_file() else None
+
+
+def revision_for(root: Path) -> str:
+    digest = hashlib.sha256()
+    for path in sorted(root.rglob("*")):
+        relative = path.relative_to(root)
+        if any(part.startswith((".", "__")) for part in relative.parts) or path.name.endswith("~") or not path.is_file():
+            continue
+        stat = path.stat()
+        digest.update(str(relative).encode())
+        digest.update(str(stat.st_mtime_ns).encode())
+        digest.update(str(stat.st_size).encode())
+    return digest.hexdigest()[:16]
+
+
+def live_reload_script() -> str:
+    return """(() => {
+  const revisionUrl = '/__apresenta/revision';
+  const scrollKey = `__apresenta.scroll:${location.pathname}`;
+  const previousScroll = sessionStorage.getItem(scrollKey);
+  if (previousScroll !== null) { sessionStorage.removeItem(scrollKey); scrollTo(0, Number(previousScroll)); }
+  let revision;
+  async function poll() {
+    try {
+      const response = await fetch(revisionUrl, { cache:'no-store' });
+      if (!response.ok) return;
+      const next = (await response.json()).revision;
+      if (!revision) { revision = next; return; }
+      if (next !== revision) { sessionStorage.setItem(scrollKey, String(scrollY)); location.reload(); }
+    } catch {}
+  }
+  poll();
+  setInterval(poll, 1000);
+})();"""
+
+
+def inject_live_reload(html: str) -> str:
+    tag = '<script src="/__apresenta/live-reload.js"></script>'
+    return html.replace("</body>", f"{tag}</body>") if "</body>" in html else html + tag
 
 
 class SessionStore:
@@ -110,6 +150,7 @@ class SessionStore:
 class ParticipationHandler(SimpleHTTPRequestHandler):
     root: Path
     store: SessionStore
+    watch = False
 
     def translate_path(self, path: str) -> str:
         request_path = urlparse(path).path
@@ -124,6 +165,24 @@ class ParticipationHandler(SimpleHTTPRequestHandler):
         data = json.dumps(payload).encode()
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def respond_javascript(self, script: str) -> None:
+        data = script.encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/javascript; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def respond_watched_html(self, target: Path) -> None:
+        data = inject_live_reload(target.read_text(encoding="utf-8")).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
@@ -156,7 +215,14 @@ class ParticipationHandler(SimpleHTTPRequestHandler):
             return
 
     def do_GET(self) -> None:
-        parts = urlparse(self.path).path.split("/")
+        request_path = urlparse(self.path).path
+        parts = request_path.split("/")
+        if self.watch and request_path == "/__apresenta/revision":
+            self.respond_json(200, {"revision": revision_for(self.root)})
+            return
+        if self.watch and request_path == "/__apresenta/live-reload.js":
+            self.respond_javascript(live_reload_script())
+            return
         if len(parts) == 5 and parts[1:3] == ["api", "sessions"] and parts[4] == "events":
             self.stream_events(parts[3], self.headers.get("Last-Event-ID"))
             return
@@ -166,6 +232,11 @@ class ParticipationHandler(SimpleHTTPRequestHandler):
             except NotFound as error:
                 self.respond_json(404, {"error": str(error)})
             return
+        if self.watch:
+            target = participation_path(self.root, request_path) or safe_path(self.root, request_path)
+            if target and target.is_file() and target.suffix.lower() in {".html", ".htm"}:
+                self.respond_watched_html(target)
+                return
         return super().do_GET()
 
     def do_POST(self) -> None:
@@ -197,12 +268,14 @@ def main() -> None:
     parser.add_argument("--public-url", required=True)
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8080)
+    parser.add_argument("--watch", action="store_true")
     args = parser.parse_args()
     root = args.root.resolve()
     if not root.is_dir():
         parser.error("--root deve apontar para diretório existente.")
     ParticipationHandler.root = root
     ParticipationHandler.store = SessionStore(args.public_url)
+    ParticipationHandler.watch = args.watch
     server = ThreadingHTTPServer((args.host, args.port), ParticipationHandler)
     print(f"Servindo {root} em {args.public_url}")
     server.serve_forever()
