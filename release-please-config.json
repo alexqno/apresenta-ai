@@ -7,7 +7,8 @@
       "extra-files": [
         "version.json",
         "apresenta-ai/version.json",
-        "apresenta-design/version.json"
+        "apresenta-design/version.json",
+        "apresenta-interacao/version.json"
       ]
     }
   }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check and install a matched apresenta-ai skill release."""
+"""Check and install matched presentation skill releases."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ import io
 
 OWNER = "alexqno"
 REPOSITORY = "apresenta-ai"
-SKILLS = ("apresenta-ai", "apresenta-design")
+SKILLS = ("apresenta-ai", "apresenta-design", "apresenta-interacao")
 REF_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
 
@@ -54,7 +54,7 @@ def installed_version(destination_dir: Path) -> str | None:
     if not any(present):
         return None
     if not all(present):
-        raise UpdateError("Instalação incompleta: instale ou remova as duas skills juntas.")
+        raise UpdateError("Instalação incompleta: instale ou remova as três skills juntas.")
     versions = {read_version(destination_dir / skill) for skill in SKILLS}
     if len(versions) != 1:
         raise UpdateError("Skills instaladas usam versões diferentes.")
@@ -121,7 +121,7 @@ def download_source(ref: str, temporary_dir: Path) -> Path:
 
 
 def parse_args(arguments: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Atualiza apresenta-ai e apresenta-design juntas.")
+    parser = argparse.ArgumentParser(description="Atualiza as skills de apresentação juntas.")
     parser.add_argument("--check", action="store_true", help="Somente informa a versão disponível.")
     parser.add_argument("--yes", action="store_true", help="Confirma a substituição da instalação.")
     parser.add_argument("--ref", default="master", help="Branch ou tag publicada (padrão: master).")
