@@ -109,6 +109,30 @@ class SessionStoreTests(unittest.TestCase):
         self.assertIn('parser.add_argument("--watch", action="store_true")', server)
         self.assertIn("inject_live_reload", server)
 
+    def test_ia_usage_vote_replaces_prior_vote_and_keeps_identity_private(self):
+        session = self.store.create("pausa")
+        self.store.update_slide(session["sessionId"], session["presenterToken"], 2)
+
+        self.store.vote(session["sessionId"], "browser-a", "explore")
+        updated = self.store.vote(session["sessionId"], "browser-a", "automate")
+        public = self.server.SessionStore.public(updated)
+        poll = public["polls"]["ia-usage"]
+
+        self.assertEqual(1, poll["totalVotes"])
+        self.assertEqual(0, poll["totals"]["explore"])
+        self.assertEqual(1, poll["totals"]["automate"])
+        self.assertNotIn("browser-a", json.dumps(public))
+
+    def test_ia_usage_vote_rejects_invalid_option_and_inactive_slide(self):
+        session = self.store.create("pausa")
+
+        with self.assertRaises(self.server.Conflict):
+            self.store.vote(session["sessionId"], "browser-a", "explore")
+
+        self.store.update_slide(session["sessionId"], session["presenterToken"], 2)
+        with self.assertRaises(ValueError):
+            self.store.vote(session["sessionId"], "browser-a", "not-an-option")
+
 
 if __name__ == "__main__":
     unittest.main()

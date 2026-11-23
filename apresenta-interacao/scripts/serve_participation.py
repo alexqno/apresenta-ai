@@ -18,6 +18,8 @@ from uuid import uuid4
 
 
 SESSION_ID_PATTERN = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", re.I)
+IA_USAGE_OPTIONS = ("explore", "research", "draft", "agent", "automate")
+IA_USAGE_SLIDE_INDEX = 2
 
 
 class Forbidden(RuntimeError):
@@ -25,6 +27,10 @@ class Forbidden(RuntimeError):
 
 
 class NotFound(RuntimeError):
+    pass
+
+
+class Conflict(RuntimeError):
     pass
 
 
@@ -107,6 +113,7 @@ class SessionStore:
             "slideIndex": 0,
             "updatedAt": now.isoformat(),
             "expiresAt": (now + timedelta(seconds=self.ttl_seconds)).isoformat(),
+            "votes": {"ia-usage": {}},
         }
         session["participationUrl"] = f"{self.public_url}/{deck}/participar/{session['sessionId']}"
         with self.lock:
@@ -135,6 +142,21 @@ class SessionStore:
             self.changed.notify_all()
             return updated
 
+    def vote(self, session_id: str, participant_id: str, option: str) -> dict:
+        if not isinstance(participant_id, str) or not participant_id:
+            raise ValueError("participantId inválido.")
+        if option not in IA_USAGE_OPTIONS:
+            raise ValueError("Opção de voto inválida.")
+        session = self.get(session_id)
+        if session["slideIndex"] != IA_USAGE_SLIDE_INDEX:
+            raise Conflict("A votação está disponível apenas na tela 3.")
+        with self.lock:
+            self.sessions[session_id]["votes"]["ia-usage"][participant_id] = option
+            self.sessions[session_id]["updatedAt"] = datetime.now(timezone.utc).isoformat()
+            updated = self.sessions[session_id].copy()
+            self.changed.notify_all()
+            return updated
+
     def wait_for_change(self, session_id: str, updated_at: str | None, timeout: float = 20) -> dict:
         with self.changed:
             session = self.get(session_id)
@@ -144,7 +166,11 @@ class SessionStore:
 
     @staticmethod
     def public(session: dict) -> dict:
-        return {key: value for key, value in session.items() if key != "presenterToken"}
+        votes = session.get("votes", {}).get("ia-usage", {})
+        totals = {option: sum(value == option for value in votes.values()) for option in IA_USAGE_OPTIONS}
+        public = {key: value for key, value in session.items() if key not in {"presenterToken", "votes"}}
+        public["polls"] = {"ia-usage": {"totals": totals, "totalVotes": sum(totals.values())}}
+        return public
 
 
 class ParticipationHandler(SimpleHTTPRequestHandler):
@@ -253,9 +279,15 @@ class ParticipationHandler(SimpleHTTPRequestHandler):
                 session = self.store.update_slide(parts[3], body.get("presenterToken", ""), body.get("slideIndex"))
                 self.respond_json(200, SessionStore.public(session))
                 return
+            if len(parts) == 6 and parts[1:3] == ["api", "sessions"] and parts[4:] == ["votes", "ia-usage"]:
+                session = self.store.vote(parts[3], body.get("participantId", ""), body.get("option"))
+                self.respond_json(200, SessionStore.public(session))
+                return
             self.respond_json(404, {"error": "Rota não encontrada."})
         except Forbidden as error:
             self.respond_json(403, {"error": str(error)})
+        except Conflict as error:
+            self.respond_json(409, {"error": str(error)})
         except NotFound as error:
             self.respond_json(404, {"error": str(error)})
         except (TypeError, ValueError, json.JSONDecodeError) as error:
