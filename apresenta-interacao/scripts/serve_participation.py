@@ -9,10 +9,14 @@ from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
+import re
 import secrets
 from threading import Condition, RLock
 from urllib.parse import unquote, urlparse
 from uuid import uuid4
+
+
+SESSION_ID_PATTERN = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", re.I)
 
 
 class Forbidden(RuntimeError):
@@ -36,6 +40,14 @@ def safe_path(root: Path, request_path: str) -> Path | None:
     relative = unquote(request_path).lstrip("/") or "index.html"
     target = (root / relative).resolve()
     return target if target == root.resolve() or root.resolve() in target.parents else None
+
+
+def participation_path(root: Path, request_path: str) -> Path | None:
+    parts = [part for part in request_path.split("/") if part]
+    if len(parts) != 3 or parts[1] != "participar" or not SESSION_ID_PATTERN.fullmatch(parts[2]):
+        return None
+    target = safe_path(root, f"/{parts[0]}/participar/index.html")
+    return target if target and target.is_file() else None
 
 
 class SessionStore:
@@ -99,7 +111,8 @@ class ParticipationHandler(SimpleHTTPRequestHandler):
     store: SessionStore
 
     def translate_path(self, path: str) -> str:
-        target = safe_path(self.root, urlparse(path).path)
+        request_path = urlparse(path).path
+        target = participation_path(self.root, request_path) or safe_path(self.root, request_path)
         return str(target or self.root / "__not_found__")
 
     def read_json(self) -> dict:

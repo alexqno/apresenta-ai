@@ -48,6 +48,15 @@ class SessionStoreTests(unittest.TestCase):
             self.assertEqual((root / "index.html").resolve(), self.server.safe_path(root, "/index.html"))
             self.assertIsNone(self.server.safe_path(root, "/../secret"))
 
+    def test_participation_session_route_resolves_mobile_index(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / "pausa" / "participar"
+            target.mkdir(parents=True)
+            (target / "index.html").write_text("mobile")
+            self.assertEqual((target / "index.html").resolve(), self.server.participation_path(root, "/pausa/participar/00000000-0000-4000-8000-000000000000"))
+            self.assertIsNone(self.server.participation_path(root, "/pausa/participar/app.js"))
+
 
 if __name__ == "__main__":
     unittest.main()
