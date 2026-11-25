@@ -364,6 +364,11 @@ templates do palco, do espectador e do moderador fornecidos pela skill.
 Para essa interatividade, a skill auxiliar deve definir requisitos de
 publicação, sincronização e validação em múltiplos dispositivos antes de a
 funcionalidade ser implementada.
+Quando publicação HTTPS for explicitamente autorizada, delegue a preparação da
+infraestrutura a `$apresenta-interacao`; ela mantém o runtime local como
+contingência e prepara Cloudflare somente com manifesto de assets mínimo. Use
+`$cloudflare-deploy` para autenticação e deploy. Não trate publicação como
+parte implícita da geração do deck.
 
 Mantenha criação da apresentação, narrativa, design pattern e identidade
 visual nesta skill principal. Não crie skill auxiliar apenas por haver um

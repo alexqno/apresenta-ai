@@ -1,0 +1,11 @@
+{
+  "name": "apresenta-interacao-cloudflare",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "npm run build && npx wrangler dev",
+    "check": "npm run build && npx wrangler deploy --dry-run",
+    "deploy": "npm run build && npx wrangler deploy"
+  }
+}
