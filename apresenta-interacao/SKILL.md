@@ -21,7 +21,16 @@ quando requisitado, participar de interações.
   ordem e visual.
 - Não assuma votação, coleta de dados, autenticação ou publicação externa.
 
-# Primeira entrega local
+# Entrega local ou publicação
+
+Confirme o modo antes de preparar infraestrutura:
+
+- **Rede local:** use `serve_participation.py`; QR aponta para IP LAN explícito.
+- **Cloudflare:** somente após autorização de publicação, quando participantes
+  precisam acessar por HTTPS fora da rede local. Preserve o modo local como
+  alternativa de ensaio e contingência.
+
+## Primeira entrega local
 
 Para acompanhamento por celular na mesma rede:
 
@@ -43,6 +52,42 @@ Para acompanhamento por celular na mesma rede:
 6. Preserve orientação vertical e alvos de toque utilizáveis em celular.
 7. Abra links externos em nova aba quando disponível e aceite somente URLs
    autorizadas pelo projeto.
+
+## Publicação autorizada no Cloudflare
+
+Quando publicação Cloudflare estiver autorizada, prepare o template neutro
+antes do deploy. Use `$cloudflare-deploy` para autenticação, validação e
+publicação; esta skill não cria credenciais nem publica por conta própria.
+
+1. Crie `cloudflare-assets.json` na raiz da entrega. Declare somente arquivos
+   realmente usados, separados em `deck` e `design`. Inclua imagens dinâmicas
+   referidas por JavaScript ou CSS; não copie o vault inteiro.
+2. Execute o preparador com a pasta da apresentação, do design e um nome de
+   Worker aprovado:
+
+   ```bash
+   python3 scripts/prepare_cloudflare.py \
+     --presentation .apresentaAI/<apresentacao> \
+     --design .apresentaAI/designs/<instituicao> \
+     --worker-name <nome-publico> \
+     --manifest .apresentaAI/<apresentacao>/cloudflare-assets.json
+   ```
+
+3. O comando cria `cloudflare/` com Worker, Durable Object, `public/` e
+   scripts `npm run build`, `npm run check`, `npm run dev` e `npm run deploy`.
+   Nunca sobrescreva uma preparação existente sem revisar o alvo; use `--force`
+   apenas quando sua substituição for intencional.
+4. Em `cloudflare/`, rode `npm run check`. Após autorização para a alteração
+   externa, publique com `npm run deploy` e registre a URL HTTPS resultante.
+5. Valide apresentação, criação de sessão, QR, participante, moderador e ao
+   menos uma interação na URL publicada. A URL raiz deve abrir o deck em
+   `?ao-vivo` e o QR deve usar essa mesma origem HTTPS.
+
+O template preserva o contrato `/api/sessions/*`: uma sessão é um Durable
+Object, expira em quatro horas, dados públicos são agregados e o token do
+apresentador fica restrito ao fragmento do moderador e ao armazenamento local.
+Leia `assets/cloudflare/src/index.ts` somente ao adaptar a API; para preparar
+uma entrega, use o script.
 
 # Votação ao vivo
 
