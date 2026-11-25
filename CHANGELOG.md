@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/alexqno/apresenta-ai/compare/v0.3.0...v0.4.0) (2026-11-25)
+
+
+### Features
+
+* add cloudflare interaction deployment ([f365305](https://github.com/alexqno/apresenta-ai/commit/f3653059f882491be10667f4dc8fec1462f080b2))
+* add cloudflare interaction deployment ([260451c](https://github.com/alexqno/apresenta-ai/commit/260451c6c61024225f96cf3fc81c11f5f4250f3e))
+
 ## [0.3.0](https://github.com/alexqno/apresenta-ai/compare/v0.2.0...v0.3.0) (2026-11-25)
 
 
