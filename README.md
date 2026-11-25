@@ -95,4 +95,5 @@ escrita para workflows e autorização para GitHub Actions criar pull requests.
 - `apresenta-ai/`: criação de apresentações; não inclui marca ou identidade.
 - `apresenta-design/`: entrevista, template neutro e criação de designs locais.
 - `apresenta-interacao/`: acompanhamento móvel, sessão local, QR code,
-  votação, diagnóstico, triagem, moderação e post-its.
+  votação, diagnóstico, triagem, moderação, post-its e template Cloudflare
+  para publicação autorizada.
