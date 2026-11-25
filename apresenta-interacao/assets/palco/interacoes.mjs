@@ -74,16 +74,6 @@ function buildDiagnostic(root, diagnostic) {
 }
 
 function buildTriage(root, triage) {
-  const reveal = element('button', '', 'Revelar referência');
-  let latestSession = {};
-  reveal.type = 'button';
-  reveal.onclick = () => {
-    root.classList.add('is-revealed');
-    reveal.disabled = true;
-    reveal.textContent = 'Referência revelada';
-    render(latestSession);
-  };
-  root.append(reveal);
   const cards = triage.items.map(item => {
     const card = element('article', 'ai-triage-card');
     const winner = element('strong', '');
@@ -97,7 +87,9 @@ function buildTriage(root, triage) {
     root.append(card);
     return { item, winner, signals, badge };
   });
-  function render(session) { cards.forEach(({ item, winner, signals, badge }) => {
+  function render(session) {
+    root.classList.toggle('is-revealed', Boolean(session.triages?.[triage.id]?.referenceRevealed));
+    cards.forEach(({ item, winner, signals, badge }) => {
     const totals = session.triages?.[triage.id]?.totals?.[item.id] || {};
     const max = Math.max(0, ...Object.values(totals));
     const leaders = triage.categories.filter(category => max && totals[category.id] === max);
@@ -116,8 +108,9 @@ function buildTriage(root, triage) {
       badge.className = 'ai-triage-badge ' + (correct ? 'is-correct' : 'is-incorrect');
       badge.textContent = correct ? '✓ Classificação correta' : '↺ Rever classificação';
     }
-  }); }
-  return session => { latestSession = session; render(session); };
+    });
+  }
+  return render;
 }
 
 function openNote(note, record) {

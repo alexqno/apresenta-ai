@@ -257,6 +257,7 @@ class SessionStore:
             "diagnostics": {diagnostic_id: {} for diagnostic_id in diagnostic_definitions},
             "triageDefinitions": triage_definitions,
             "triages": {triage_id: {} for triage_id in triage_definitions},
+            "triageReferences": {triage_id: False for triage_id in triage_definitions},
             "postitDefinitions": postit_definitions,
             "postits": {postit_id: [] for postit_id in postit_definitions},
         }
@@ -321,6 +322,22 @@ class SessionStore:
         with self.lock:
             previous = self.sessions[session_id]["triages"][triage_id].get(participant_id, {})
             self.sessions[session_id]["triages"][triage_id][participant_id] = {**previous, **assignments}
+            self.sessions[session_id]["updatedAt"] = datetime.now(timezone.utc).isoformat()
+            updated = self.sessions[session_id].copy()
+            self.changed.notify_all()
+            return updated
+
+    def reveal_triage_reference(self, session_id: str, presenter_token: str, triage_id: str) -> dict:
+        session = self.get(session_id)
+        if not secrets.compare_digest(session["presenterToken"], presenter_token):
+            raise Forbidden("Token de apresentador inválido.")
+        definition = session["triageDefinitions"].get(triage_id)
+        if not definition:
+            raise ValueError("Triagem inválida.")
+        if session["slideIndex"] != definition["slideIndex"]:
+            raise Conflict("A referência só pode ser revelada na tela ativa.")
+        with self.lock:
+            self.sessions[session_id]["triageReferences"][triage_id] = True
             self.sessions[session_id]["updatedAt"] = datetime.now(timezone.utc).isoformat()
             updated = self.sessions[session_id].copy()
             self.changed.notify_all()
@@ -396,7 +413,7 @@ class SessionStore:
 
     @staticmethod
     def public(session: dict) -> dict:
-        public = {key: value for key, value in session.items() if key not in {"presenterToken", "pollDefinitions", "votes", "diagnosticDefinitions", "diagnostics", "triageDefinitions", "triages", "postitDefinitions", "postits"}}
+        public = {key: value for key, value in session.items() if key not in {"presenterToken", "pollDefinitions", "votes", "diagnosticDefinitions", "diagnostics", "triageDefinitions", "triages", "triageReferences", "postitDefinitions", "postits"}}
         public["polls"] = {}
         for poll_id, definition in session.get("pollDefinitions", {}).items():
             votes = session.get("votes", {}).get(poll_id, {})
@@ -411,7 +428,11 @@ class SessionStore:
         for triage_id, definition in session.get("triageDefinitions", {}).items():
             responses = session.get("triages", {}).get(triage_id, {})
             totals = {item: {category: sum(response.get(item) == category for response in responses.values()) for category in definition["categories"]} for item in definition["items"]}
-            public["triages"][triage_id] = {"totals": totals, "totalResponses": len(responses)}
+            public["triages"][triage_id] = {
+                "totals": totals,
+                "totalResponses": len(responses),
+                "referenceRevealed": session.get("triageReferences", {}).get(triage_id, False),
+            }
         public["postits"] = {
             postit_id: [record.copy() for record in records if record["status"] == "approved"]
             for postit_id, records in session.get("postits", {}).items()
@@ -560,6 +581,10 @@ class ParticipationHandler(SimpleHTTPRequestHandler):
             if len(parts) == 6 and parts[1:3] == ["api", "sessions"] and parts[4] == "triages":
                 session = self.store.triage(parts[3], body.get("participantId", ""), parts[5], body.get("assignments"))
                 self.respond_json(200, SessionStore.public(session))
+                return
+            if len(parts) == 7 and parts[1:3] == ["api", "sessions"] and parts[4] == "triages" and parts[6] == "reference":
+                session = self.store.reveal_triage_reference(parts[3], self.headers.get("X-Presenter-Token", ""), parts[5])
+                self.respond_json(200, self.store.moderator(parts[3], self.headers.get("X-Presenter-Token", "")))
                 return
             if len(parts) == 6 and parts[1:3] == ["api", "sessions"] and parts[4] == "postits":
                 session = self.store.submit_postit(parts[3], body.get("participantId", ""), parts[5], body.get("text"))
