@@ -34,7 +34,8 @@ indisponibilidade. O QR da capa cria nova sessão; QRs nas telas interativas
 são somente de entrada. Somente moderação inclui token no fragmento.
 
 Valide a galeria em `/<pasta>/galeria-interacoes/index.html`. Os três
-botões exercitam os mesmos componentes da apresentação. O botão de referência
-expande a orientação da triagem, e o clique no papel abre o diálogo. Para
-validar moderação de ponta a ponta, abra a página pelo QR, navegue até a tela
-do quadro, envie texto, abra o painel privado e aprove ou descarte.
+botões exercitam os mesmos componentes da apresentação. A referência da
+triagem é revelada somente no painel privado do moderador; o palco apenas
+reflete o estado da sessão. O clique no papel abre o diálogo. Para validar
+moderação de ponta a ponta, abra a página pelo QR, navegue até a tela do
+quadro, envie texto, abra o painel privado e aprove ou descarte.
