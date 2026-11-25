@@ -82,6 +82,8 @@ Antes de considerar entrega pronta, valide:
 - Atualize `SKILL.md` quando uma regra recorrente mudar.
 - Crie skill auxiliar somente para responsabilidade específica, reutilizável e
   independente.
+- Ao criar uma skill auxiliar, revise `README.md`: inclua propósito, quando
+  usar, limites, instalação, atualização e relação com as skills existentes.
 - Evite transformar preferências de uma apresentação em regra global sem
   confirmação.
 
