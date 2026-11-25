@@ -2,3 +2,4 @@
 .superpowers/
 docs/superpowers/
 __pycache__/
+node_modules/

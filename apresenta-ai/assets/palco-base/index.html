@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Título da apresentação</title>
+  <!-- Inclua os tokens e os componentes do design escolhido. -->
+  <link rel="stylesheet" href="palco.css">
+  <script defer src="palco.js"></script>
+</head>
+<body>
+  <main class="presentation-stage" aria-label="Título da apresentação">
+    <section class="slide" data-slide-id="abertura" aria-labelledby="titulo-abertura">
+      <h1 id="titulo-abertura">Título da apresentação</h1>
+    </section>
+    <section class="slide" data-slide-id="decisao" aria-labelledby="titulo-decisao" hidden>
+      <header class="presentation-heading">
+        <span class="presentation-kicker">Contexto</span>
+        <h2 id="titulo-decisao">Qual decisão precisamos tomar?</h2>
+      </header>
+    </section>
+    <footer class="presentation-footer" aria-label="Identificação e paginação">
+      <span>Nome da apresentação</span><span data-pagination></span>
+    </footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{
+  "name": "apresenta-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Conjunto de skills para criar apresentações web e identidades visuais locais.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "npm run test:contracts && npm run test:interacao",
+    "test:contracts": "python3 -m unittest discover -s test -p 'test_presentation_contracts.py' -q",
+    "test:interacao": "python3 -m unittest discover -s apresenta-interacao/test -q && node --test apresenta-interacao/test/palco.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexqno/apresenta-ai.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/alexqno/apresenta-ai/issues"
+  },
+  "homepage": "https://github.com/alexqno/apresenta-ai#readme",
+  "devDependencies": {
+    "playwright": "^1.65.1"
+  }
+}

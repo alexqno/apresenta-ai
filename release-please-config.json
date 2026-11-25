@@ -6,6 +6,8 @@
     ".": {
       "extra-files": [
         "version.json",
+        "package.json",
+        "package-lock.json",
         "apresenta-ai/version.json",
         "apresenta-design/version.json",
         "apresenta-interacao/version.json"

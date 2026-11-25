@@ -170,6 +170,18 @@ class SessionStoreTests(unittest.TestCase):
         self.assertIn("/diagnostics/", client)
         self.assertIn(".diagnostic-option.is-selected", styles)
 
+    def test_mobile_template_is_generic_and_postit_can_submit_with_enter(self):
+        root = Path(__file__).parents[1] / "assets" / "participar"
+        client = (root / "app.js").read_text()
+        styles = (root / "styles.css").read_text()
+        moderator = (Path(__file__).parents[1] / "assets" / "moderador" / "styles.css").read_text()
+
+        self.assertIn("event.key === 'Enter'", client)
+        self.assertIn("slide.postits?.subtitle || slide.summary", client)
+        self.assertIn("slide.links || []", client)
+        self.assertNotIn("Korporate", client + styles + moderator)
+        self.assertNotIn("--kp-", styles + moderator)
+
     def test_skill_documents_weighted_diagnostic_option(self):
         skill = (Path(__file__).parents[1] / "SKILL.md").read_text()
 
@@ -207,6 +219,114 @@ class SessionStoreTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             self.store.diagnose(session["sessionId"], "browser-a", "task-xray", ["objective", "scope", "risk"])
+
+    def test_triage_replaces_card_classifications_and_keeps_identity_private(self):
+        triages = {"context-filter": {"slideIndex": 13, "categories": ["send", "treat", "never"], "items": ["public-brief", "access-token"]}}
+        session = self.store.create("pausa", triages=triages)
+        self.store.update_slide(session["sessionId"], session["presenterToken"], 13)
+
+        self.store.triage(session["sessionId"], "browser-a", "context-filter", {"public-brief": "send", "access-token": "treat"})
+        updated = self.store.triage(session["sessionId"], "browser-a", "context-filter", {"public-brief": "send", "access-token": "never"})
+        public = self.server.SessionStore.public(updated)
+
+        self.assertEqual(1, public["triages"]["context-filter"]["totals"]["access-token"]["never"])
+        self.assertEqual(0, public["triages"]["context-filter"]["totals"]["access-token"]["treat"])
+        self.assertNotIn("browser-a", json.dumps(public))
+
+    def test_triage_rejects_inactive_slide_and_unknown_category(self):
+        triages = {"context-filter": {"slideIndex": 13, "categories": ["send", "treat", "never"], "items": ["public-brief"]}}
+        session = self.store.create("pausa", triages=triages)
+
+        with self.assertRaises(self.server.Conflict):
+            self.store.triage(session["sessionId"], "browser-a", "context-filter", {"public-brief": "send"})
+        self.store.update_slide(session["sessionId"], session["presenterToken"], 13)
+        with self.assertRaises(ValueError):
+            self.store.triage(session["sessionId"], "browser-a", "context-filter", {"public-brief": "unknown"})
+
+    def test_presenter_session_includes_aggregate_triage_totals(self):
+        triages = {"context-filter": {"slideIndex": 13, "categories": ["send", "treat", "never"], "items": ["public-brief"]}}
+        session = self.store.create("pausa", triages=triages)
+
+        presenter = self.server.SessionStore.presenter(session)
+
+        self.assertEqual(session["presenterToken"], presenter["presenterToken"])
+        self.assertEqual({"send": 0, "treat": 0, "never": 0}, presenter["triages"]["context-filter"]["totals"]["public-brief"])
+        self.assertNotIn("triageDefinitions", presenter)
+        self.assertNotIn("browser-a", json.dumps(presenter))
+
+    def test_postit_submission_stays_private_until_approved(self):
+        postits = {"practices": {"slideIndex": 16, "maxLength": 280}}
+        session = self.store.create("pausa", postits=postits)
+        self.store.update_slide(session["sessionId"], session["presenterToken"], 16)
+
+        submitted = self.store.submit_postit(session["sessionId"], "browser-a", "practices", "<b>Reviso o diff</b>")
+        public = self.server.SessionStore.public(submitted)
+        private = self.store.moderator(session["sessionId"], session["presenterToken"])
+
+        self.assertEqual([], public["postits"]["practices"])
+        self.assertEqual("pending", private["postits"]["practices"][0]["status"])
+        self.assertEqual("<b>Reviso o diff</b>", private["postits"]["practices"][0]["text"])
+
+    def test_postit_approval_exposes_stable_pastel_style(self):
+        postits = {"practices": {"slideIndex": 16, "maxLength": 280}}
+        session = self.store.create("pausa", postits=postits)
+        self.store.update_slide(session["sessionId"], session["presenterToken"], 16)
+        submitted = self.store.submit_postit(session["sessionId"], "browser-a", "practices", "Reviso o diff")
+        postit = self.store.moderator(session["sessionId"], session["presenterToken"])["postits"]["practices"][0]
+
+        approved = self.store.decide_postit(session["sessionId"], session["presenterToken"], "practices", postit["id"], "approved")
+        visible = self.server.SessionStore.public(approved)["postits"]["practices"]
+
+        self.assertEqual("approved", visible[0]["status"])
+        self.assertEqual(postit["style"], visible[0]["style"])
+        self.assertIn(visible[0]["style"]["color"], {"amber", "peach", "mint", "sky", "lilac"})
+
+    def test_postit_layout_uses_safe_organic_positions_with_only_small_overlaps(self):
+        styles = []
+        for position in range(15):
+            style = self.server.postit_style(position, styles)
+            self.assertGreaterEqual(style["x"], 12)
+            self.assertLessEqual(style["x"], 88)
+            self.assertGreaterEqual(style["y"], 31)
+            self.assertLessEqual(style["y"], 75)
+            for existing in styles:
+                overlap = max(0, 18 - abs(style["x"] - existing["x"])) * max(0, 18 - abs(style["y"] - existing["y"]))
+                self.assertLessEqual(overlap, 90)
+            styles.append(style)
+        self.assertGreater(len({style["x"] for style in styles}), 5)
+        self.assertGreater(len({style["y"] for style in styles}), 3)
+
+    def test_postit_layout_distributes_second_layer_before_reusing_a_position(self):
+        styles = [self.server.postit_style(position, []) for position in range(15)]
+        for position in range(1, len(styles)):
+            styles[position] = self.server.postit_style(position, styles[:position])
+
+        second_layer = []
+        for position in range(15, 23):
+            style = self.server.postit_style(position, styles)
+            second_layer.append((style["x"], style["y"]))
+            styles.append(style)
+
+        self.assertEqual(len(second_layer), len(set(second_layer)))
+        self.assertGreater(len({x for x, _ in second_layer}), 3)
+
+    def test_private_moderator_template_reads_token_from_fragment(self):
+        moderator = Path(__file__).parents[1] / "assets" / "moderador" / "app.js"
+
+        self.assertTrue(moderator.is_file())
+        content = moderator.read_text(encoding="utf-8")
+        self.assertIn("location.hash", content)
+        self.assertIn("X-Presenter-Token", content)
+        self.assertIn("history.replaceState", content)
+
+    def test_moderator_uses_same_live_navigation_contract_as_participant(self):
+        app = (Path(__file__).parents[1] / "assets" / "moderador" / "app.js").read_text(encoding="utf-8")
+        html = (Path(__file__).parents[1] / "assets" / "moderador" / "index.html").read_text(encoding="utf-8")
+
+        self.assertIn("IntersectionObserver", app)
+        self.assertIn("scrollIntoView", app)
+        self.assertIn("live-jump", html)
+        self.assertIn("new EventSource", app)
 
     def test_poll_gallery_shows_stage_and_mobile_states(self):
         gallery = Path(__file__).parents[1] / "assets" / "galeria-interacoes" / "index.html"

@@ -1,27 +1,39 @@
 :root {
   --presentation-title-tracking: 0.06em;
   --presentation-color-surface: #ffffff;
+  --presentation-color-surface-muted: #f3f4f6;
   --presentation-color-surface-strong: #172033;
   --presentation-color-text: #172033;
+  --presentation-color-text-muted: #5b6472;
   --presentation-color-text-inverse: #ffffff;
-  --presentation-color-accent: #2457d6;
-  --presentation-color-positive: #18794e;
-  --presentation-color-attention: #a63c06;
-  --presentation-color-danger: #bd1f31;
+  --presentation-color-accent: #2563eb;
+  --presentation-color-success: #15803d;
+  --presentation-color-warning: #b45309;
+  --presentation-color-danger: #b91c1c;
+  --presentation-color-info: #2563eb;
+  --presentation-color-positive: var(--presentation-color-success);
+  --presentation-color-attention: var(--presentation-color-warning);
   --presentation-card-accent: var(--presentation-color-accent);
-  --presentation-card-surface: #eef3ff;
+  --presentation-card-surface: #eff6ff;
   --presentation-font-display: system-ui, sans-serif;
   --presentation-font-body: system-ui, sans-serif;
+  --presentation-font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
   --presentation-space-1: 0.5rem;
-  --presentation-space-2: 1rem;
-  --presentation-space-3: 1.5rem;
-  --presentation-space-4: 2.5rem;
-  --presentation-radius: 1rem;
+  --presentation-space-2: 0.75rem;
+  --presentation-space-3: 1rem;
+  --presentation-space-4: 1.5rem;
+  --presentation-space-5: 2.25rem;
+  --presentation-space-6: 3.5rem;
+  --presentation-heading-gap: var(--presentation-space-4);
+  --presentation-radius-sm: 0.75rem;
+  --presentation-radius: 1.25rem;
+  --presentation-radius-lg: 2rem;
+  --presentation-shadow-soft: 0 1.25rem 3rem rgb(23 32 51 / 12%);
+  --presentation-shadow-lift: 0 2rem 5rem rgb(23 32 51 / 18%);
   --presentation-motion-fast: 160ms;
+  --presentation-motion-base: 360ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :root {
-    --presentation-motion-fast: 0ms;
-  }
+  :root { --presentation-motion-fast: 0ms; --presentation-motion-base: 0ms; }
 }

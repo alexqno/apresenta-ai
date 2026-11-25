@@ -11,6 +11,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 import re
+from random import Random
 import secrets
 from threading import Condition, RLock
 from urllib.parse import unquote, urlparse
@@ -95,6 +96,79 @@ def normalize_diagnostics(value: object | None) -> dict[str, dict]:
     return normalized
 
 
+def normalize_triages(value: object | None) -> dict[str, dict]:
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError("triages deve ser um objeto indexado por id.")
+    normalized: dict[str, dict] = {}
+    for triage_id, definition in value.items():
+        if not isinstance(triage_id, str) or not POLL_ID_PATTERN.fullmatch(triage_id) or not isinstance(definition, dict):
+            raise ValueError("definição de triagem inválida.")
+        slide_index, categories, items = definition.get("slideIndex"), definition.get("categories"), definition.get("items")
+        if not isinstance(slide_index, int) or slide_index < 0 or not isinstance(categories, (list, tuple)) or len(categories) < 2 or not isinstance(items, (list, tuple)) or not items:
+            raise ValueError("definição de triagem inválida.")
+        if not all(isinstance(value, str) and POLL_ID_PATTERN.fullmatch(value) for value in [*categories, *items]) or len(set(categories)) != len(categories) or len(set(items)) != len(items):
+            raise ValueError("categorias ou itens de triagem inválidos.")
+        normalized[triage_id] = {"slideIndex": slide_index, "categories": tuple(categories), "items": tuple(items)}
+    return normalized
+
+
+def normalize_postits(value: object | None) -> dict[str, dict]:
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError("postits deve ser um objeto indexado por id.")
+    normalized: dict[str, dict] = {}
+    for postit_id, definition in value.items():
+        if not isinstance(postit_id, str) or not POLL_ID_PATTERN.fullmatch(postit_id) or not isinstance(definition, dict):
+            raise ValueError("definição de post-it inválida.")
+        slide_index = definition.get("slideIndex")
+        max_length = definition.get("maxLength", 280)
+        if not isinstance(slide_index, int) or slide_index < 0 or not isinstance(max_length, int) or not 1 <= max_length <= 1000:
+            raise ValueError("definição de post-it inválida.")
+        normalized[postit_id] = {"slideIndex": slide_index, "maxLength": max_length}
+    return normalized
+
+
+POSTIT_WIDTH = 18
+POSTIT_HEIGHT = 18
+
+
+def postit_style(position: int, occupied: list[dict[str, int | float | str]] | None = None) -> dict[str, int | float | str]:
+    colors = ("amber", "peach", "mint", "sky", "lilac")
+    occupied = occupied or []
+    random = Random(position * 7919 + 17)
+    candidates = [(round(random.uniform(12, 88), 1), round(random.uniform(31, 75), 1)) for _ in range(120)]
+
+    def overlaps(candidate: tuple[int, int], style: dict[str, int | float | str]) -> bool:
+        return abs(candidate[0] - float(style["x"])) < POSTIT_WIDTH and abs(candidate[1] - float(style["y"])) < POSTIT_HEIGHT
+
+    available = [candidate for candidate in candidates if not any(overlaps(candidate, style) for style in occupied)]
+    candidates = available or candidates
+    if not occupied:
+        x, y = candidates[0]
+    else:
+        def overlap_area(candidate: tuple[int, int], style: dict[str, int | float | str]) -> float:
+            horizontal = max(0, POSTIT_WIDTH - abs(candidate[0] - float(style["x"])))
+            vertical = max(0, POSTIT_HEIGHT - abs(candidate[1] - float(style["y"])))
+            return horizontal * vertical
+
+        def score(candidate: tuple[int, int]) -> tuple[float, float, float]:
+            overlaps = [overlap_area(candidate, style) for style in occupied]
+            separation = min((candidate[0] - float(style["x"])) ** 2 + (candidate[1] - float(style["y"])) ** 2 for style in occupied)
+            return (-max(overlaps), -sum(overlaps), separation)
+
+        x, y = max(candidates, key=score)
+    return {
+        "color": colors[position % len(colors)],
+        "x": x,
+        "y": y,
+        "rotation": ((position * 7) % 9) - 4,
+        "z": position + 1,
+    }
+
+
 def safe_path(root: Path, request_path: str) -> Path | None:
     relative = unquote(request_path).lstrip("/") or "index.html"
     target = (root / relative).resolve()
@@ -106,6 +180,14 @@ def participation_path(root: Path, request_path: str) -> Path | None:
     if len(parts) != 3 or parts[1] != "participar" or not SESSION_ID_PATTERN.fullmatch(parts[2]):
         return None
     target = safe_path(root, f"/{parts[0]}/participar/index.html")
+    return target if target and target.is_file() else None
+
+
+def moderator_path(root: Path, request_path: str) -> Path | None:
+    parts = [part for part in request_path.split("/") if part]
+    if len(parts) != 3 or parts[1] != "moderador" or not SESSION_ID_PATTERN.fullmatch(parts[2]):
+        return None
+    target = safe_path(root, f"/{parts[0]}/moderador/index.html")
     return target if target and target.is_file() else None
 
 
@@ -156,10 +238,12 @@ class SessionStore:
         self.lock = RLock()
         self.changed = Condition(self.lock)
 
-    def create(self, deck: str, polls: object | None = None, diagnostics: object | None = None) -> dict:
+    def create(self, deck: str, polls: object | None = None, diagnostics: object | None = None, triages: object | None = None, postits: object | None = None) -> dict:
         now = datetime.now(timezone.utc)
         definitions = normalize_polls(polls)
         diagnostic_definitions = normalize_diagnostics(diagnostics)
+        triage_definitions = normalize_triages(triages)
+        postit_definitions = normalize_postits(postits)
         session = {
             "sessionId": str(uuid4()),
             "presenterToken": secrets.token_urlsafe(32),
@@ -171,6 +255,10 @@ class SessionStore:
             "votes": {poll_id: {} for poll_id in definitions},
             "diagnosticDefinitions": diagnostic_definitions,
             "diagnostics": {diagnostic_id: {} for diagnostic_id in diagnostic_definitions},
+            "triageDefinitions": triage_definitions,
+            "triages": {triage_id: {} for triage_id in triage_definitions},
+            "postitDefinitions": postit_definitions,
+            "postits": {postit_id: [] for postit_id in postit_definitions},
         }
         session["participationUrl"] = f"{self.public_url}/{deck}/participar/{session['sessionId']}"
         with self.lock:
@@ -219,6 +307,65 @@ class SessionStore:
             self.changed.notify_all()
             return updated
 
+    def triage(self, session_id: str, participant_id: str, triage_id: str, assignments: object) -> dict:
+        if not isinstance(participant_id, str) or not participant_id or not isinstance(assignments, dict):
+            raise ValueError("triagem inválida.")
+        session = self.get(session_id)
+        definition = session["triageDefinitions"].get(triage_id)
+        if not definition:
+            raise ValueError("Triagem inválida.")
+        if session["slideIndex"] != definition["slideIndex"]:
+            raise Conflict("A triagem está disponível apenas na tela ativa.")
+        if not assignments or not set(assignments).issubset(definition["items"]) or any(value not in definition["categories"] for value in assignments.values()):
+            raise ValueError("Classificação de triagem inválida.")
+        with self.lock:
+            previous = self.sessions[session_id]["triages"][triage_id].get(participant_id, {})
+            self.sessions[session_id]["triages"][triage_id][participant_id] = {**previous, **assignments}
+            self.sessions[session_id]["updatedAt"] = datetime.now(timezone.utc).isoformat()
+            updated = self.sessions[session_id].copy()
+            self.changed.notify_all()
+            return updated
+
+    def submit_postit(self, session_id: str, participant_id: str, postit_id: str, text: object) -> dict:
+        if not isinstance(participant_id, str) or not participant_id or not isinstance(text, str):
+            raise ValueError("post-it inválido.")
+        session = self.get(session_id)
+        definition = session["postitDefinitions"].get(postit_id)
+        cleaned = text.strip()
+        if not definition or not cleaned or len(cleaned) > definition["maxLength"]:
+            raise ValueError("post-it inválido.")
+        if session["slideIndex"] != definition["slideIndex"]:
+            raise Conflict("O quadro de post-its está disponível apenas na tela ativa.")
+        with self.lock:
+            records = self.sessions[session_id]["postits"][postit_id]
+            records.append({
+                "id": str(uuid4()),
+                "text": cleaned,
+                "status": "pending",
+                "createdAt": datetime.now(timezone.utc).isoformat(),
+                "style": postit_style(len(records), [record["style"] for record in records]),
+            })
+            self.sessions[session_id]["updatedAt"] = datetime.now(timezone.utc).isoformat()
+            updated = self.sessions[session_id].copy()
+            self.changed.notify_all()
+            return updated
+
+    def decide_postit(self, session_id: str, presenter_token: str, postit_id: str, record_id: str, decision: str) -> dict:
+        session = self.get(session_id)
+        if not secrets.compare_digest(session["presenterToken"], presenter_token):
+            raise Forbidden("Token de apresentador inválido.")
+        if decision not in {"approved", "discarded"} or postit_id not in session["postitDefinitions"]:
+            raise ValueError("Decisão de post-it inválida.")
+        with self.lock:
+            record = next((item for item in self.sessions[session_id]["postits"][postit_id] if item["id"] == record_id), None)
+            if not record:
+                raise NotFound("Post-it não encontrado.")
+            record["status"] = decision
+            self.sessions[session_id]["updatedAt"] = datetime.now(timezone.utc).isoformat()
+            updated = self.sessions[session_id].copy()
+            self.changed.notify_all()
+            return updated
+
     def vote(self, session_id: str, participant_id: str, poll_id: str, option: str | None = None) -> dict:
         if option is None:
             option = poll_id
@@ -249,7 +396,7 @@ class SessionStore:
 
     @staticmethod
     def public(session: dict) -> dict:
-        public = {key: value for key, value in session.items() if key not in {"presenterToken", "pollDefinitions", "votes", "diagnosticDefinitions", "diagnostics"}}
+        public = {key: value for key, value in session.items() if key not in {"presenterToken", "pollDefinitions", "votes", "diagnosticDefinitions", "diagnostics", "triageDefinitions", "triages", "postitDefinitions", "postits"}}
         public["polls"] = {}
         for poll_id, definition in session.get("pollDefinitions", {}).items():
             votes = session.get("votes", {}).get(poll_id, {})
@@ -260,7 +407,31 @@ class SessionStore:
             responses = session.get("diagnostics", {}).get(diagnostic_id, {})
             totals = {item: sum(item in response for response in responses.values()) for item in definition["items"]}
             public["diagnostics"][diagnostic_id] = {"totals": totals, "totalResponses": sum(bool(response) for response in responses.values())}
+        public["triages"] = {}
+        for triage_id, definition in session.get("triageDefinitions", {}).items():
+            responses = session.get("triages", {}).get(triage_id, {})
+            totals = {item: {category: sum(response.get(item) == category for response in responses.values()) for category in definition["categories"]} for item in definition["items"]}
+            public["triages"][triage_id] = {"totals": totals, "totalResponses": len(responses)}
+        public["postits"] = {
+            postit_id: [record.copy() for record in records if record["status"] == "approved"]
+            for postit_id, records in session.get("postits", {}).items()
+        }
         return public
+
+    @staticmethod
+    def presenter(session: dict) -> dict:
+        return {**SessionStore.public(session), "presenterToken": session["presenterToken"]}
+
+    def moderator(self, session_id: str, presenter_token: str) -> dict:
+        session = self.get(session_id)
+        if not secrets.compare_digest(session["presenterToken"], presenter_token):
+            raise Forbidden("Token de apresentador inválido.")
+        private = SessionStore.public(session)
+        private["postits"] = {
+            postit_id: [record.copy() for record in records if record["status"] != "discarded"]
+            for postit_id, records in session.get("postits", {}).items()
+        }
+        return private
 
 
 class ParticipationHandler(SimpleHTTPRequestHandler):
@@ -270,7 +441,7 @@ class ParticipationHandler(SimpleHTTPRequestHandler):
 
     def translate_path(self, path: str) -> str:
         request_path = urlparse(path).path
-        target = participation_path(self.root, request_path) or safe_path(self.root, request_path)
+        target = participation_path(self.root, request_path) or moderator_path(self.root, request_path) or safe_path(self.root, request_path)
         return str(target or self.root / "__not_found__")
 
     def read_json(self) -> dict:
@@ -348,8 +519,16 @@ class ParticipationHandler(SimpleHTTPRequestHandler):
             except NotFound as error:
                 self.respond_json(404, {"error": str(error)})
             return
+        if len(parts) == 5 and parts[1:3] == ["api", "sessions"] and parts[4] == "moderator":
+            try:
+                self.respond_json(200, self.store.moderator(parts[3], self.headers.get("X-Presenter-Token", "")))
+            except Forbidden as error:
+                self.respond_json(403, {"error": str(error)})
+            except NotFound as error:
+                self.respond_json(404, {"error": str(error)})
+            return
         if self.watch:
-            target = participation_path(self.root, request_path) or safe_path(self.root, request_path)
+            target = participation_path(self.root, request_path) or moderator_path(self.root, request_path) or safe_path(self.root, request_path)
             if target and target.is_file() and target.suffix.lower() in {".html", ".htm"}:
                 self.respond_watched_html(target)
                 return
@@ -363,7 +542,8 @@ class ParticipationHandler(SimpleHTTPRequestHandler):
                 deck = body.get("deck")
                 if not isinstance(deck, str) or not deck:
                     raise ValueError("deck é obrigatório.")
-                self.respond_json(201, self.store.create(deck, body.get("polls"), body.get("diagnostics")))
+                session = self.store.create(deck, body.get("polls"), body.get("diagnostics"), body.get("triages"), body.get("postits"))
+                self.respond_json(201, SessionStore.presenter(session))
                 return
             if len(parts) == 5 and parts[1:3] == ["api", "sessions"] and parts[4] == "slide":
                 session = self.store.update_slide(parts[3], body.get("presenterToken", ""), body.get("slideIndex"))
@@ -376,6 +556,18 @@ class ParticipationHandler(SimpleHTTPRequestHandler):
             if len(parts) == 6 and parts[1:3] == ["api", "sessions"] and parts[4] == "diagnostics":
                 session = self.store.diagnose(parts[3], body.get("participantId", ""), parts[5], body.get("items"))
                 self.respond_json(200, SessionStore.public(session))
+                return
+            if len(parts) == 6 and parts[1:3] == ["api", "sessions"] and parts[4] == "triages":
+                session = self.store.triage(parts[3], body.get("participantId", ""), parts[5], body.get("assignments"))
+                self.respond_json(200, SessionStore.public(session))
+                return
+            if len(parts) == 6 and parts[1:3] == ["api", "sessions"] and parts[4] == "postits":
+                session = self.store.submit_postit(parts[3], body.get("participantId", ""), parts[5], body.get("text"))
+                self.respond_json(200, SessionStore.public(session))
+                return
+            if len(parts) == 7 and parts[1:3] == ["api", "sessions"] and parts[4] == "postits":
+                session = self.store.decide_postit(parts[3], self.headers.get("X-Presenter-Token", ""), parts[5], parts[6], body.get("decision"))
+                self.respond_json(200, self.store.moderator(parts[3], self.headers.get("X-Presenter-Token", "")))
                 return
             self.respond_json(404, {"error": "Rota não encontrada."})
         except Forbidden as error:
