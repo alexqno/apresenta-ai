@@ -54,8 +54,10 @@ Para instalar uma versão específica, use sua tag:
 python3 ~/.codex/skills/apresenta-ai/scripts/update_skills.py --yes --ref v0.2.0
 ```
 
-O atualizador baixa os dois pacotes, valida que suas versões coincidem e só
-então substitui a instalação. Se a troca falhar, restaura a versão anterior.
+O atualizador baixa os três pacotes, valida que `apresenta-ai` e
+`apresenta-design` usam a mesma versão e só então substitui a instalação. A
+skill auxiliar `apresenta-interacao` possui versão própria. Se a troca falhar,
+restaura a versão anterior.
 Abra uma nova conversa após atualizar para recarregar as instruções.
 
 Instalações anteriores que não possuem `update_skills.py` exigem uma
@@ -66,7 +68,7 @@ de instalação desta documentação.
 
 `master` recebe mudanças somente por PR. Após cada merge, Release Please cria
 ou atualiza um PR de release. O merge desse PR publica tag, GitHub Release,
-`CHANGELOG.md` e versões das duas skills.
+`CHANGELOG.md` e versões de `apresenta-ai` e `apresenta-design`.
 
 Os commits seguem Conventional Commits: `fix` incrementa patch, `feat`
 incrementa minor e uma alteração incompatível incrementa major.

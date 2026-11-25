@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check and install matched presentation skill releases."""
+"""Check and install presentation skill releases atomically."""
 
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ import io
 OWNER = "alexqno"
 REPOSITORY = "apresenta-ai"
 SKILLS = ("apresenta-ai", "apresenta-design", "apresenta-interacao")
+CORE_SKILLS = ("apresenta-ai", "apresenta-design")
 REF_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
 
@@ -39,26 +40,37 @@ def read_version(skill_dir: Path) -> str:
     return version
 
 
-def source_version(source_dir: Path) -> str:
-    versions = {read_version(source_dir / skill) for skill in SKILLS}
-    if len(versions) != 1:
-        raise UpdateError("Pacotes de origem usam versões diferentes.")
+def skill_versions(source_dir: Path) -> dict[str, str]:
+    versions = {skill: read_version(source_dir / skill) for skill in SKILLS}
+    if len({versions[skill] for skill in CORE_SKILLS}) != 1:
+        raise UpdateError("apresenta-ai e apresenta-design precisam usar a mesma versão.")
     for skill in SKILLS:
         if not (source_dir / skill / "SKILL.md").is_file():
             raise UpdateError(f"SKILL.md ausente em {skill}.")
-    return versions.pop()
+    return versions
 
 
-def installed_version(destination_dir: Path) -> str | None:
-    present = [(destination_dir / skill).is_dir() for skill in SKILLS]
-    if not any(present):
+def source_version(source_dir: Path) -> dict[str, str]:
+    return skill_versions(source_dir)
+
+
+def installed_version(destination_dir: Path) -> dict[str, str | None] | None:
+    present = {skill: (destination_dir / skill).is_dir() for skill in SKILLS}
+    if not any(present.values()):
         return None
-    if not all(present):
-        raise UpdateError("Instalação incompleta: instale ou remova as três skills juntas.")
-    versions = {read_version(destination_dir / skill) for skill in SKILLS}
-    if len(versions) != 1:
-        raise UpdateError("Skills instaladas usam versões diferentes.")
-    return versions.pop()
+    if not all(present[skill] for skill in CORE_SKILLS):
+        raise UpdateError("apresenta-ai e apresenta-design precisam estar instaladas juntas.")
+    versions = {skill: read_version(destination_dir / skill) if present[skill] else None for skill in SKILLS}
+    if versions["apresenta-ai"] != versions["apresenta-design"]:
+        raise UpdateError("apresenta-ai e apresenta-design instaladas usam versões diferentes.")
+    return versions
+
+
+def version_label(versions: dict[str, str | None] | None) -> str:
+    if not versions:
+        return "nenhuma"
+    return (f"apresenta-ai/apresenta-design: {versions['apresenta-ai']}; "
+            f"apresenta-interacao: {versions['apresenta-interacao'] or 'não instalada'}")
 
 
 def update_from_source(source_dir: Path, destination_dir: Path, check_only: bool) -> SimpleNamespace:
@@ -74,7 +86,7 @@ def update_from_source(source_dir: Path, destination_dir: Path, check_only: bool
     try:
         for skill in SKILLS:
             shutil.copytree(source_dir / skill, staging_dir / skill)
-        source_version(staging_dir)
+        skill_versions(staging_dir)
 
         for skill in SKILLS:
             installed_skill = destination_dir / skill
@@ -138,11 +150,11 @@ def main(arguments: list[str] | None = None) -> int:
         source = args.source_dir or download_source(args.ref, Path(temporary_dir))
         result = update_from_source(source, args.dest, check_only=not args.yes)
     if result.updated:
-        print(f"Atualizado para {result.available}.")
+        print(f"Atualizado para {version_label(result.available)}.")
     elif result.installed == result.available:
-        print(f"Já está na versão {result.available}.")
+        print(f"Já está em {version_label(result.available)}.")
     else:
-        print(f"Instalada: {result.installed or 'nenhuma'}; disponível: {result.available}.")
+        print(f"Instalada: {version_label(result.installed)}; disponível: {version_label(result.available)}.")
     return 0
 
 
