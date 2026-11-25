@@ -44,11 +44,24 @@ institucional.
 2. Se existir, inspecione-o e confirme antes de sobrescrever arquivos.
 3. Copie `assets/design-template/` para
    `.apresentaAI/designs/<instituicao>/` no projeto invocador.
+   O template traz `gallery.html`, `gallery.css`, `gallery.js` e `circuit.js`:
+   mantenha-os locais e use a galeria para escolher componentes antes de criar
+   variantes. Os tokens `success`, `warning`, `danger` e `info` são papéis
+   semânticos neutros; substitua a paleta, não o significado.
 4. Adapte tokens, componentes, ativos e racional ao que foi confirmado. O
    racional inclui a seção `Direção de imagens`, com escolhas e limites que
    `$apresenta-ai` poderá aplicar sem nova entrevista.
-5. Crie uma galeria ou exemplos de padrões apenas se ajudarem a validar o
-   design; ela não substitui uma apresentação real.
+5. Quando criar ou alterar um componente reutilizável, adicione ou atualize
+   uma tela correspondente na galeria para validar seu uso e orientar futuras
+   apresentações. Para componentes sem expressão visual própria, documente o
+   motivo em vez de criar uma tela artificial. A galeria não substitui uma
+   apresentação real.
+   Para guia visual de teclado, defina a escala em HD e Full HD no próprio
+   `components.css`; rótulos, teclas, padding e espaçamento escalam juntos.
+   Ao promover uma composição aprovada, extraia a marcação, o CSS e os assets
+   necessários para reproduzi-la com outro conteúdo. Teste o exemplo copiável
+   na galeria com o mesmo componente carregado pelas apresentações. Atribua a
+   escala ao componente ou ao seu modificador sem depender do número da tela.
 6. Registre fontes dos ativos e licença ou autorização aplicável.
 
 # Estrutura mínima
@@ -72,4 +85,5 @@ institucional.
 - Racional contém `Direção de imagens`: papel, linguagem visual, composição,
   paleta, área segura para texto e exclusões. Se não houver imagem gerada,
   registre essa decisão explicitamente.
-- Design foi revisado em composição 16:9 e mantém leitura à distância.
+- Design foi revisado em 1366×768 e 1920×1080, ambas em 16:9, e mantém
+  leitura à distância.

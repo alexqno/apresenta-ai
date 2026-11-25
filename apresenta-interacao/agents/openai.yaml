@@ -1,0 +1,4 @@
+interface:
+  display_name: "Apresenta Interação"
+  short_description: "Cria acompanhamento móvel para apresentações"
+  default_prompt: "Use $apresenta-interacao para criar uma página móvel de participação para esta apresentação."

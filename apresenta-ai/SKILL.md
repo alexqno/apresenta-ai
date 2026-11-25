@@ -97,6 +97,13 @@ auxiliar, fora do grid, quando não reduzir legibilidade.
    artigo, mensagem, conteúdo obrigatório, conteúdo proibido e recurso visual.
    Conteúdo proibido registra assunto pertencente a outra tela; evita repetição
    ou migração silenciosa entre telas.
+   Copie `assets/planejamento/planejamento.md` para a raiz do deck e registre
+   nele uma seção por tela. Este é o contrato revisado pelo usuário: use
+   linguagem comum e não peça ao usuário para editar JSON. Depois da revisão,
+   crie `planejamento.json` como espelho técnico, com os mesmos IDs, fontes,
+   mensagem, conteúdos obrigatório e proibido, composição, componente, imagem
+   e ocupação vertical. O JSON é responsabilidade da skill, não uma etapa do
+   usuário.
 3. Defina direção visual por tela: tese, padrão do design reutilizado,
    composição dominante, recurso visual e conteúdo de apoio. Tela com pouco
    texto ou relação representável não pode receber só título e parágrafo.
@@ -113,6 +120,15 @@ auxiliar, fora do grid, quando não reduzir legibilidade.
    não deve competir com conteúdo ou recurso visual. Reutilize componentes do
    design antes de criar CSS local: card, fluxo, rodapé, contador e variações
    de grid devem ter contrato visual único na apresentação.
+   Fora de telas de interação, mantenha o mesmo espaçamento entre kicker e
+   título em toda a apresentação. Não altere esse intervalo por tela para
+   compensar área vazia; ajuste o conteúdo, o recurso visual ou sua composição.
+   Agrupe kicker e título com o componente de cabeçalho do design, como
+   `kp-heading-stack` no Korporate ou `presentation-heading` no template neutro.
+   No template neutro, consulte `gallery.html` do design escolhido antes de
+   compor a primeira tela: `presentation-*` cobre cards, contraste, fluxo,
+   raias, evidências, checkpoints, filtros, mandato, sinais e circuito. Use o
+   componente que representa a relação do roteiro; não recrie-o em CSS local.
    Quando o design tiver `components.css`, incorpore-o sem alterar os seletores
    do design e use suas classes nos elementos equivalentes. CSS local pode
    compor a tela, mas não pode recriar nem sobrescrever componente existente
@@ -121,11 +137,18 @@ auxiliar, fora do grid, quando não reduzir legibilidade.
    Quando o design definir card-padrão, aplique o mesmo fundo, borda, acento e
    tipografia a todos os cards equivalentes. Variação de cor ou borda só pode
    comunicar estado semântico explícito; não diferencie cards por decoração.
-   O contrato de card inclui cor interna, sombra e borda superior de `0.5rem`.
+   O contrato de card inclui cor interna, sombra e borda superior na espessura definida pelo design, ou `0.5rem` se ele não a definir.
    Toda família de cards recebe essa moldura; uma variação semântica de card
    pode trocar os tokens de cor da moldura inteira, mas nunca remover sombra,
    cor interna ou borda superior. Antes de finalizar, revise todos os cards
    visíveis contra esse contrato.
+   Cards não são layout padrão. Use-os para grupos de itens paralelos que
+   precisam ser comparados ou percorridos; não os use apenas para acomodar
+   qualquer texto. No Plano visual, registre a composição dominante de cada
+   tela e, antes de implementar, consolide um inventário de composições. Se
+   cards predominarem sem o roteiro exigir, replaneje telas com fluxo, escala,
+   comparação, diagrama, linha do tempo, mockup, dado, tipografia expressiva,
+   cena ou espaço negativo, conforme a relação que precisa ser entendida.
    Use imagem ou ilustração quando preencher composição; cards para itens
    paralelos; fluxos para processos; comparativos para escolhas opostas;
    diagramas para relações; e mockup fiel quando o roteiro nomear uma
@@ -164,10 +187,36 @@ auxiliar, fora do grid, quando não reduzir legibilidade.
    skill foi invocada, como projeto web autocontido.
 7. Implemente HTML, CSS e JavaScript na menor complexidade que entregue a
    experiência pedida.
+   Para um deck novo sem controlador próprio, copie
+   [a base de palco](assets/palco-base/index.html) com `palco.css` e `palco.js`
+   da mesma pasta. Inclua tokens e componentes do design. A base abre por
+   arquivo ou HTTP, centraliza o palco 16:9, numera as telas pela ordem do DOM
+   e emite `slidechange` com `detail.index` e `detail.id`. Use esse evento
+   para conectar a participação opcional. Use classes de composição ou IDs
+   semânticos estáveis nas regras locais. Ao trocar ou remover uma tela,
+   confira a correspondência de roteiro, matriz, plano e manifesto móvel.
+   Antes da revisão visual, execute
+   `node scripts/validar_planejamento.cjs caminho/para/planejamento.json caminho/para/index.html`
+   a partir da skill. Corrija o contrato ou a marcação até que IDs, ordem e
+   componentes declarados coincidam.
 8. Inclua navegação por teclado: próxima, anterior, início e fim. Ofereça
    tela cheia e mantenha suporte a passador quando ele emular essas teclas.
-9. Priorize tela horizontal Full HD (1920×1080), com layout seguro em telas de
-   apresentação comuns. Adapte para outras resoluções sem comprometer leitura.
+   Em tela cheia, use a Screen Wake Lock API para manter a tela ativa durante
+   a apresentação. Solicite o bloqueio somente com `fullscreenElement` ativo e
+   documento visível; libere-o ao sair da tela cheia ou em `pagehide`; volte a
+   solicitá-lo após retorno de visibilidade. Falha ou indisponibilidade da API
+   não pode interromper navegação. Registre no arquivo de execução que alguns
+   navegadores exigem contexto seguro para esse recurso. `file://` não é modo
+   suportado para prometer Wake Lock: para apresentação local, instrua abrir o
+   deck por `http://localhost`; o URL de QR para participantes pode continuar
+   usando IP local. Se o usuário exigir execução direta por arquivo, explique
+   que a única alternativa confiável é bloqueio de repouso do sistema
+   operacional, iniciado fora do navegador.
+9. Garanta tela horizontal em `1366×768` (16:9) como resolução mínima e
+   priorize Full HD (1920×1080). Adapte para resoluções maiores sem comprometer
+   leitura. Quando a capa usar guia visual de teclado, use o componente do
+   design sem recriá-lo localmente e valide em HD e Full HD todos os seus
+   elementos: rótulos, teclas, padding e espaçamento.
 10. Construa layout defensivo: trilhas de grid flexíveis usam `minmax(0, 1fr)`
     ou equivalente, componentes internos podem encolher e conteúdo visual fica
     dentro da área segura. `overflow: hidden` nunca é correção para componente
@@ -180,7 +229,15 @@ auxiliar, fora do grid, quando não reduzir legibilidade.
     reduza a composição ou escolha outro arquétipo; não reduza tudo por padrão.
 11. Inclua um arquivo local com instruções de execução e controles.
 12. Faça revisão visual e funcional; incorpore ajustes solicitados pelo usuário
-   no mesmo projeto.
+   no mesmo projeto. Após uma versão ser aprovada, crie sua referência aprovada
+   em `referencia-visual/aprovada/` dentro do deck com
+   `node scripts/capturar_palco.cjs caminho/para/index.html caminho/para/referencia-visual/aprovada`.
+   Para nova geração ou reestruturação, capture a candidata em
+   `referencia-visual/candidata/` e gere
+   `referencia-visual/comparacao.html` com
+   `node scripts/montar_comparacao_visual.cjs referencia-visual/aprovada referencia-visual/candidata referencia-visual/comparacao.html`.
+   Apresente o relatório lado a lado ao usuário. Ele compara composição,
+   escala, distribuição e legibilidade; não aprova conteúdo automaticamente.
 
 Use Git como histórico padrão. Não crie cópias versionadas da apresentação por
 padrão; crie uma versão empacotada somente quando solicitada.
@@ -213,14 +270,22 @@ padrão; crie uma versão empacotada somente quando solicitada.
 - Não há texto cortado, oculto, sobreposto indevidamente ou fora do quadro.
 - Tipografia continua legível e contraste continua suficiente em cenário de
   projetor com baixa fidelidade.
-- Próxima, anterior, início, fim e tela cheia funcionam.
-- Layout mantém composição em 1920×1080 e em resoluções de apresentação
-  compatíveis.
+- Próxima, anterior, início, fim e tela cheia funcionam. Em tela cheia, a
+  Screen Wake Lock mantém a tela ativa quando o navegador a suportar; sair da
+  tela cheia libera o bloqueio sem erro. O teste de Wake Lock é feito por
+  `localhost` ou HTTPS, nunca apenas por `file://`.
+- Layout mantém composição em 1366×768 e 1920×1080, em proporção 16:9.
+- Nas duas resoluções, confira a largura da grade renderizada, a folga até o
+  rodapé e a distância entre as caixas do kicker e do título. Uma regra CSS
+  que ainda aponta para a antiga posição da tela pode passar na prova de
+  transbordamento e deixar o conteúdo concentrado à esquerda em Full HD.
 - Cada tela usa imagem, mockup, cards, fluxo, comparação, dado ou outro
   recurso visual coerente; não entregue tela de conteúdo como texto puro.
 - Cada tela possui Plano visual por tela com decisão explícita de imagem e
   decisão de composição vertical; o inventário final de assets confirma os
   recursos planejados.
+- O inventário de composições demonstra variedade coerente com a narrativa;
+  cards predominantes sem justificativa de conteúdo exigem novo planejamento.
 - Para cada recurso visual previsto pela direção de imagens, o Plano visual
   registra uma tela que o usa ou incompatibilidade concreta; fluxo e cards não
   bastam para descartá-lo.
@@ -232,7 +297,7 @@ padrão; crie uma versão empacotada somente quando solicitada.
 - Cards mantêm título em negrito, corpo regular e escala tipográfica uniforme.
 - Cards equivalentes seguem o componente-padrão do design; diferenças de fundo,
   borda ou acento representam significado, nunca variação acidental de layout.
-- Todo card visível mantém cor interna, sombra e borda superior de `0.5rem`.
+- Todo card visível mantém cor interna, sombra e borda superior na espessura definida pelo design, ou `0.5rem` se ele não a definir.
   Variação semântica de card altera tokens da moldura completa e é registrada
   no Plano visual por tela.
 - Elemento gráfico não suprime qualificador, contexto ou conclusão do roteiro;
@@ -243,15 +308,31 @@ padrão; crie uma versão empacotada somente quando solicitada.
   pode sumir, duplicar ou migrar entre telas sem decisão registrada. Revise a
   composição de todas as telas, incluindo espaços vazios, texto repetido sobre
   gráfico, contraste do fundo e componentes do design.
+- `planejamento.md` foi revisado em linguagem comum e `planejamento.json` foi
+  validado contra o HTML: cada tela possui o mesmo ID e ordem, fonte, mensagem,
+  conteúdo obrigatório e proibido, componente, composição, decisão de imagem
+  e ocupação vertical.
 - Abertura contém guia de teclado quando a referência o possuir; todas as
   telas exibem contador ou numeração equivalente.
 - Valide em tela cheia e fora dela; rodapé, contador e marca nunca podem sair
   do enquadramento. Ao converter texto em gráfico, mantenha todas as
   informações do roteiro representadas no gráfico, legenda ou conteúdo apoio.
-- Faça prova de geometria em todas as telas, em 1920×1080 e janela 16:9: todo
-  componente visível deve permanecer dentro da área segura. Se o navegador ou
-  inspeção de geometria não estiver disponível, registre a validação visual
-  como pendente; validação estática não a substitui.
+- Faça prova de geometria em todas as telas, em 1366×768 e 1920×1080, ambas
+  em 16:9: todo componente visível deve permanecer dentro da área segura. Se o
+  navegador ou inspeção de geometria não estiver disponível, registre a
+  validação visual como pendente; validação estática não a substitui.
+- Para a base de palco com `data-slide-id`, rode
+  `node scripts/verificar_palco.cjs caminho/para/index.html` a partir da
+  skill, em um ambiente com Playwright e Chromium. O script mede cada tela
+  nas duas resoluções e em janela 1280×900, testa navegação, paginação e
+  sobreposição entre rodapé e conteúdo textual.
+  Para usar um Chrome já instalado, informe o executável em `CHROME_PATH`.
+  A inspeção visual complementa essas medidas para contraste e distribuição.
+- Uma versão aprovada possui capturas em HD e Full HD em
+  `referencia-visual/aprovada/`. Nova versão possui capturas equivalentes em
+  `referencia-visual/candidata/` e relatório local lado a lado. Diferença visual
+  exige revisão humana; não trate proximidade de pixels como equivalência de
+  conteúdo ou aprovação automática.
 - A prova é reprovada se a razão do palco não ficar entre 1,76 e 1,79, se
   `scrollHeight` exceder `clientHeight`, ou se qualquer caixa visível exceder
   a área segura. Execute-a também no container incorporado ou janela reduzida
@@ -277,7 +358,10 @@ não presente em toda apresentação. Exemplos: páginas secundárias sincroniza
 com a tela principal, QR codes de participação, enquetes e atualização de
 resultados em tempo real.
 
-Para essa interatividade, uma skill auxiliar deve definir requisitos de
+Use `$apresenta-interacao` quando a entrega incluir acompanhamento pelo celular,
+sessão ao vivo ou atividade de participação. A integração usa o manifesto e os
+templates do palco, do espectador e do moderador fornecidos pela skill.
+Para essa interatividade, a skill auxiliar deve definir requisitos de
 publicação, sincronização e validação em múltiplos dispositivos antes de a
 funcionalidade ser implementada.
 

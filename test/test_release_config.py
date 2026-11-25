@@ -17,13 +17,14 @@ class ReleaseConfigurationTests(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/release-please.yml").read_text()
         versions = {
             json.loads((ROOT / skill / "version.json").read_text())["version"]
-            for skill in ("apresenta-ai", "apresenta-design")
+            for skill in ("apresenta-ai", "apresenta-design", "apresenta-interacao")
         }
 
         self.assertEqual({manifest["."]}, versions)
         self.assertEqual("simple", config["release-type"])
         self.assertIn("apresenta-ai/version.json", json.dumps(config))
         self.assertIn("apresenta-design/version.json", json.dumps(config))
+        self.assertIn("apresenta-interacao/version.json", json.dumps(config))
         self.assertIn("branches: [master]", workflow)
         self.assertIn("googleapis/release-please-action@v4", workflow)
         self.assertIn("pull-requests: write", workflow)
@@ -41,7 +42,7 @@ class SkillUpdaterTests(unittest.TestCase):
         self.source = self.root / "source"
         self.destination = self.root / "installed"
         for parent in (self.source, self.destination):
-            for skill, version in (("apresenta-ai", "0.2.0"), ("apresenta-design", "0.2.0")):
+            for skill, version in (("apresenta-ai", "0.2.0"), ("apresenta-design", "0.2.0"), ("apresenta-interacao", "0.2.0")):
                 folder = parent / skill
                 folder.mkdir(parents=True)
                 (folder / "SKILL.md").write_text(f"# {skill}\n")
@@ -58,16 +59,25 @@ class SkillUpdaterTests(unittest.TestCase):
         self.assertEqual("0.2.0", self.module.read_version(self.destination / "apresenta-ai"))
 
     def test_update_replaces_both_skill_packages(self):
-        for skill in ("apresenta-ai", "apresenta-design"):
+        for skill in ("apresenta-ai", "apresenta-design", "apresenta-interacao"):
             (self.destination / skill / "version.json").write_text(json.dumps({"version": "0.1.0"}))
             (self.source / skill / "new-file").write_text("new")
 
         result = self.module.update_from_source(self.source, self.destination, check_only=False)
 
         self.assertTrue(result.updated)
-        for skill in ("apresenta-ai", "apresenta-design"):
+        for skill in ("apresenta-ai", "apresenta-design", "apresenta-interacao"):
             self.assertEqual("0.2.0", self.module.read_version(self.destination / skill))
             self.assertTrue((self.destination / skill / "new-file").exists())
+
+    def test_updater_installs_interaction_skill(self):
+        for skill in ("apresenta-ai", "apresenta-design", "apresenta-interacao"):
+            (self.destination / skill / "version.json").write_text(json.dumps({"version": "0.1.0"}))
+
+        result = self.module.update_from_source(self.source, self.destination, check_only=False)
+
+        self.assertTrue(result.updated)
+        self.assertTrue((self.destination / "apresenta-interacao" / "SKILL.md").exists())
 
     def test_mismatched_source_versions_leave_installation_unchanged(self):
         (self.source / "apresenta-design/version.json").write_text(json.dumps({"version": "0.3.0"}))
@@ -79,7 +89,7 @@ class SkillUpdaterTests(unittest.TestCase):
         self.assertEqual(before, (self.destination / "apresenta-ai/version.json").read_text())
 
     def test_failed_second_swap_restores_original_packages(self):
-        for skill in ("apresenta-ai", "apresenta-design"):
+        for skill in ("apresenta-ai", "apresenta-design", "apresenta-interacao"):
             (self.destination / skill / "version.json").write_text(json.dumps({"version": "0.1.0"}))
 
         original_move = self.module.shutil.move
@@ -93,7 +103,7 @@ class SkillUpdaterTests(unittest.TestCase):
             with self.assertRaises(self.module.UpdateError):
                 self.module.update_from_source(self.source, self.destination, check_only=False)
 
-        for skill in ("apresenta-ai", "apresenta-design"):
+        for skill in ("apresenta-ai", "apresenta-design", "apresenta-interacao"):
             self.assertEqual("0.1.0", self.module.read_version(self.destination / skill))
 
 

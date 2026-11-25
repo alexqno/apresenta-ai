@@ -1,0 +1,9 @@
+{
+  "title": "Oficina de planejamento",
+  "slides": [
+    {"number":1,"title":"Prioridade","summary":"Escolha a prioridade da oficina.","links":[],"poll":{"id":"prioridade","question":"O que priorizar?","options":[{"id":"prazo","label":"Prazo"},{"id":"custo","label":"Custo"},{"id":"qualidade","label":"Qualidade"}]}},
+    {"number":2,"title":"Diagnóstico","summary":"Identifique os pontos que precisam de atenção.","links":[],"diagnostic":{"id":"atencao","question":"O que exige atenção?","maxSelections":2,"highlightThreshold":3,"items":[{"id":"agenda","label":"Agenda"},{"id":"materiais","label":"Materiais"},{"id":"espaco","label":"Espaço"}]}},
+    {"number":3,"title":"Triagem","summary":"Classifique cada atividade.","links":[],"triage":{"id":"atividades","question":"Quando realizar?","categories":[{"id":"antes","label":"Antes"},{"id":"durante","label":"Durante"}],"items":[{"id":"convite","label":"Convite","detail":"Convidar participantes","referenceCategory":"antes"},{"id":"registro","label":"Registro","detail":"Registrar decisões","referenceCategory":"durante"}]}},
+    {"number":4,"title":"Ideias","summary":"Compartilhe uma sugestão.","links":[],"postits":{"id":"ideias","question":"Como melhorar a oficina?","placeholder":"Escreva sua sugestão","maxLength":180}}
+  ]
+}
