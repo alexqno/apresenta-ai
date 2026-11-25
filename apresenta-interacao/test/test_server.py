@@ -254,6 +254,31 @@ class SessionStoreTests(unittest.TestCase):
         self.assertNotIn("triageDefinitions", presenter)
         self.assertNotIn("browser-a", json.dumps(presenter))
 
+    def test_only_moderator_can_reveal_a_triage_reference(self):
+        triages = {"context-filter": {"slideIndex": 13, "categories": ["send", "treat", "never"], "items": ["public-brief"]}}
+        session = self.store.create("pausa", triages=triages)
+        self.store.update_slide(session["sessionId"], session["presenterToken"], 13)
+
+        with self.assertRaises(self.server.Forbidden):
+            self.store.reveal_triage_reference(session["sessionId"], "wrong", "context-filter")
+
+        updated = self.store.reveal_triage_reference(session["sessionId"], session["presenterToken"], "context-filter")
+
+        self.assertTrue(self.server.SessionStore.public(updated)["triages"]["context-filter"]["referenceRevealed"])
+
+    def test_moderator_template_controls_triage_reference(self):
+        root = Path(__file__).parents[1] / "assets" / "moderador"
+        client = (root / "app.js").read_text()
+
+        self.assertIn("revealTriageReference", client)
+        self.assertIn("/triages/${triage.id}/reference", client)
+
+    def test_stage_template_reflects_reference_state_without_public_control(self):
+        stage = (Path(__file__).parents[1] / "assets" / "palco" / "interacoes.mjs").read_text()
+
+        self.assertNotIn("const reveal = element('button'", stage)
+        self.assertIn("referenceRevealed", stage)
+
     def test_postit_submission_stays_private_until_approved(self):
         postits = {"practices": {"slideIndex": 16, "maxLength": 280}}
         session = self.store.create("pausa", postits=postits)

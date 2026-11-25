@@ -17,7 +17,7 @@ function render(state) {
   const snapshots = [
     {},
     { polls: { prioridade: { totals: { prazo: 3, custo: 1, qualidade: 1 }, totalVotes: 5 } }, diagnostics: { atencao: { totals: { agenda: 2 } } }, triages: { atividades: { totals: { convite: { antes: 2 } } } }, postits: { ideias: notes.slice(0, 1) } },
-    { polls: { prioridade: { totals: { prazo: 3, custo: 3, qualidade: 1 }, totalVotes: 7 } }, diagnostics: { atencao: { totals: { agenda: 3 } } }, triages: { atividades: { totals: { convite: { antes: 2, durante: 2 } } } }, postits: { ideias: notes } }
+    { polls: { prioridade: { totals: { prazo: 3, custo: 3, qualidade: 1 }, totalVotes: 7 } }, diagnostics: { atencao: { totals: { agenda: 3 } } }, triages: { atividades: { totals: { convite: { antes: 2, durante: 2 } }, referenceRevealed:true } }, postits: { ideias: notes } }
   ];
   renderers.forEach(update => update(snapshots[state]));
   const pending = document.querySelector('#pendencia');

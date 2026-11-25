@@ -129,6 +129,9 @@ use `triage`, não enquete nem diagnóstico ponderado.
 - Mostre no palco o destino com maior consenso. Empates e ausência de resposta
   ficam neutros. Depois, exponha a orientação de referência sem chamar a
   resposta coletiva de erro.
+- A referência só pode ser revelada pelo moderador, no painel privado, após a
+  triagem estar na tela ativa. Grave esse estado na sessão e propague-o ao
+  palco; nunca deixe esse controle no palco ou no painel público.
 - Registre o modelo e seus estados na galeria de interações.
 
 # Quadro de post-its moderado
