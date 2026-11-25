@@ -16,11 +16,12 @@ class ReleaseConfigurationTests(unittest.TestCase):
         manifest = json.loads((ROOT / ".release-please-manifest.json").read_text())
         workflow = (ROOT / ".github/workflows/release-please.yml").read_text()
         versions = {
-            json.loads((ROOT / skill / "version.json").read_text())["version"]
+            skill: json.loads((ROOT / skill / "version.json").read_text())["version"]
             for skill in ("apresenta-ai", "apresenta-design", "apresenta-interacao")
         }
 
-        self.assertEqual({manifest["."]}, versions)
+        self.assertEqual(manifest["."], versions["apresenta-ai"])
+        self.assertEqual(manifest["."], versions["apresenta-design"])
         self.assertEqual("simple", config["release-type"])
         self.assertIn("apresenta-ai/version.json", json.dumps(config))
         self.assertIn("apresenta-design/version.json", json.dumps(config))
@@ -54,7 +55,7 @@ class SkillUpdaterTests(unittest.TestCase):
     def test_check_reports_update_without_changing_installation(self):
         result = self.module.update_from_source(self.source, self.destination, check_only=True)
 
-        self.assertEqual("0.2.0", result.available)
+        self.assertEqual("0.2.0", result.available["apresenta-ai"])
         self.assertFalse(result.updated)
         self.assertEqual("0.2.0", self.module.read_version(self.destination / "apresenta-ai"))
 
@@ -79,6 +80,14 @@ class SkillUpdaterTests(unittest.TestCase):
         self.assertTrue(result.updated)
         self.assertTrue((self.destination / "apresenta-interacao" / "SKILL.md").exists())
 
+    def test_updater_migrates_existing_core_installation_with_no_interaction_skill(self):
+        shutil.rmtree(self.destination / "apresenta-interacao")
+
+        result = self.module.update_from_source(self.source, self.destination, check_only=False)
+
+        self.assertTrue(result.updated)
+        self.assertTrue((self.destination / "apresenta-interacao" / "SKILL.md").exists())
+
     def test_mismatched_source_versions_leave_installation_unchanged(self):
         (self.source / "apresenta-design/version.json").write_text(json.dumps({"version": "0.3.0"}))
         before = (self.destination / "apresenta-ai/version.json").read_text()
@@ -87,6 +96,15 @@ class SkillUpdaterTests(unittest.TestCase):
             self.module.update_from_source(self.source, self.destination, check_only=False)
 
         self.assertEqual(before, (self.destination / "apresenta-ai/version.json").read_text())
+
+    def test_interaction_version_can_differ_from_core_skills(self):
+        (self.source / "apresenta-interacao/version.json").write_text(json.dumps({"version": "0.6.0"}))
+
+        versions = self.module.source_version(self.source)
+
+        self.assertEqual("0.2.0", versions["apresenta-ai"])
+        self.assertEqual("0.2.0", versions["apresenta-design"])
+        self.assertEqual("0.6.0", versions["apresenta-interacao"])
 
     def test_failed_second_swap_restores_original_packages(self):
         for skill in ("apresenta-ai", "apresenta-design", "apresenta-interacao"):
